@@ -36,7 +36,6 @@ impl<T> FixedVec<T> {
             data: Vec::with_capacity(fixed_capacity),
         }
     }
-
     /// Returns the available room for new items; i.e.,
     /// `capacity() - len()`.
     ///
@@ -77,12 +76,14 @@ impl<T> FixedVec<T> {
     }
 
     #[inline(always)]
+    #[allow(clippy::panic)]
     pub(crate) fn panic_if_not_enough_room_for(&self, num_new_items: usize) {
         if self.data.len() + num_new_items > self.data.capacity() {
             panic!("{}", ERR_MSG_OUT_OF_ROOM);
         }
     }
     #[inline(always)]
+    #[allow(clippy::panic)]
     pub(crate) fn push_or_panic(&mut self, value: T) {
         let len = self.data.len();
         if len == self.data.capacity() {

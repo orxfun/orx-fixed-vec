@@ -24,7 +24,7 @@ let mut vec = FixedVec::new(100);
 
 // push the first element
 vec.push(42usize);
-assert_eq!(&[42], &vec);
+assert_eq!(vec, &[42]);
 
 // let's get a pointer to the first element
 let addr42 = &vec[0] as *const usize;
@@ -34,8 +34,8 @@ for i in 1..100 {
     vec.push(i);
 }
 
-for (i, elem) in vec.into_iter().enumerate() {
-    assert_eq!(if i == 0 { 42 } else { i }, *elem);
+for i in 0..100 {
+    assert_eq!(if i == 0 { 42 } else { i }, vec[i]);
 }
 
 // the memory location of the first element remains intact

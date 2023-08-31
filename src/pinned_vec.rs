@@ -9,6 +9,17 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn clear(&mut self) {
         self.data.clear();
     }
+
+    /// Clones and appends all elements in a slice to the Vec.
+    ///
+    /// Iterates over the slice other, clones each element, and then appends it to this Vec. The other slice is traversed in-order.
+    ///
+    /// Note that this function is same as extend except that it is specialized to work with slices instead. If and when Rust gets specialization this function will likely be deprecated (but still available).
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is not enough room in the vector for the elements in `other`;
+    /// i.e., `self.room() < other.len()`.
     fn extend_from_slice(&mut self, other: &[T])
     where
         T: Clone,
@@ -34,6 +45,28 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.get_unchecked_mut(index)
     }
 
+    /// Inserts an element at position index within the vector, shifting all elements after it to the right.
+    ///
+    /// # Panics
+    /// Panics if `index >= len`.
+    ///
+    /// Panics also if there is no available room in the vector;
+    /// i.e., `self.is_full()` or equivalently `self.len() == self.capacity()`.
+    ///
+    /// # Safety
+    ///
+    /// This operation is **unsafe** when `T` is not `NotSelfRefVecItem`.
+    /// To pick the conservative approach, every T which does not implement `NotSelfRefVecItem`
+    /// is assumed to be a vector item referencing other vector items.
+    ///
+    /// `insert` is unsafe since insertion of a new element at an arbitrary position of the vector
+    /// typically changes the positions of already existing elements.
+    ///
+    /// When the elements are holding references to other elements of the vector,
+    /// this change in positions makes the references invalid.
+    ///
+    /// On the other hand, any vector implementing `PinnedVec<T>` where `T: NotSelfRefVecItem`
+    /// implements `PinnedVecSimple<T>` which implements the safe version of this method.
     #[inline(always)]
     unsafe fn unsafe_insert(&mut self, index: usize, element: T) {
         self.panic_if_not_enough_room_for(1);
@@ -51,6 +84,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     unsafe fn unsafe_pop(&mut self) -> Option<T> {
         self.data.pop()
     }
+    /// Appends an element to the back of a collection.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no available room in the vector;
+    /// i.e., `self.is_full()` or equivalently `self.len() == self.capacity()`.
     #[inline(always)]
     fn push(&mut self, value: T) {
         self.push_or_panic(value)
@@ -82,9 +121,9 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     where
         T: Clone,
     {
-        Self {
-            data: self.data.clone(),
-        }
+        let mut data = Vec::with_capacity(self.data.capacity());
+        data.extend_from_slice(&self.data);
+        Self { data }
     }
 }
 

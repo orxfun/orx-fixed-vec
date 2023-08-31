@@ -22,7 +22,7 @@
 //!
 //! // push the first element
 //! vec.push(42usize);
-//! assert_eq!(&[42], &vec);
+//! assert_eq!(vec, &[42]);
 //!
 //! // let's get a pointer to the first element
 //! let addr42 = &vec[0] as *const usize;
@@ -32,8 +32,8 @@
 //!     vec.push(i);
 //! }
 //!
-//! for (i, elem) in vec.into_iter().enumerate() {
-//!     assert_eq!(if i == 0 { 42 } else { i }, *elem);
+//! for i in 0..100 {
+//!     assert_eq!(if i == 0 { 42 } else { i }, vec[i]);
 //! }
 //!
 //! // the memory location of the first element remains intact
@@ -65,6 +65,18 @@
 //! * `ImpVec` allows safely building the vector where items are referencing each other,
 //! * `ImpVec` can then be converted back to the underlying `FixedVec`
 //! having the abovementioned features and safety guarantees.
+
+#![warn(
+    missing_docs,
+    clippy::unwrap_in_result,
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::panic_in_result_fn,
+    clippy::float_cmp,
+    clippy::float_cmp_const,
+    clippy::missing_panics_doc,
+    clippy::todo
+)]
 
 mod common_traits;
 mod fixed_vec;
