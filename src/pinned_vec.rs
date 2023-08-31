@@ -35,7 +35,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     }
 
     #[inline(always)]
-    fn insert(&mut self, index: usize, element: T) {
+    unsafe fn unsafe_insert(&mut self, index: usize, element: T) {
         self.panic_if_not_enough_room_for(1);
         self.data.insert(index, element)
     }
@@ -48,7 +48,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.len()
     }
     #[inline(always)]
-    fn pop(&mut self) -> Option<T> {
+    unsafe fn unsafe_pop(&mut self) -> Option<T> {
         self.data.pop()
     }
     #[inline(always)]
@@ -56,7 +56,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.push_or_panic(value)
     }
     #[inline(always)]
-    fn remove(&mut self, index: usize) -> T {
+    unsafe fn unsafe_remove(&mut self, index: usize) -> T {
         self.data.remove(index)
     }
 
@@ -76,6 +76,15 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         write!(f, "FixedVec ")?;
         self.data.fmt(f)?;
         writeln!(f)
+    }
+
+    unsafe fn unsafe_clone(&self) -> Self
+    where
+        T: Clone,
+    {
+        Self {
+            data: self.data.clone(),
+        }
     }
 }
 
@@ -245,6 +254,15 @@ mod tests {
             for i in 0..42 {
                 vec.push(i);
             }
+            for i in (0..42).rev() {
+                assert_eq!(Some(i), vec.pop());
+            }
+            assert_eq!(None, vec.pop());
+            assert!(vec.is_empty());
+
+            for i in 0..42 {
+                vec.push(i);
+            }
             for _ in 0..42 {
                 vec.remove(vec.len() / 2);
             }
@@ -272,5 +290,93 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {}
+    fn clone() {
+        fn test(mut vec: FixedVec<usize>) {
+            assert!(vec.is_empty());
+
+            for i in 0..53 {
+                vec.push(i);
+            }
+
+            let clone = vec.clone();
+            assert_eq!(vec, clone);
+        }
+
+        test(FixedVec::new(53));
+        test(FixedVec::new(1000));
+    }
+
+    #[derive(Debug, PartialEq, Clone)]
+    struct Num(usize);
+    #[test]
+    fn unsafe_insert() {
+        fn test(mut vec: FixedVec<Num>) {
+            for i in 0..42 {
+                vec.push(Num(i));
+            }
+            for i in 0..42 {
+                unsafe { vec.unsafe_insert(i, Num(100 + i)) };
+            }
+
+            for i in 0..42 {
+                assert_eq!(Some(&Num(i)), vec.get(42 + i));
+                assert_eq!(Some(&Num(100 + i)), vec.get(i));
+            }
+        }
+        test(FixedVec::new(84));
+        test(FixedVec::new(1000));
+    }
+    #[test]
+    fn unsafe_shrink() {
+        fn test(mut vec: FixedVec<Num>) {
+            for i in 0..42 {
+                vec.push(Num(i));
+                assert_eq!(Num(i), unsafe { vec.unsafe_remove(0) });
+                assert!(vec.is_empty());
+            }
+
+            for i in 0..42 {
+                vec.push(Num(i));
+            }
+            for i in 0..42 {
+                assert_eq!(Num(i), unsafe { vec.unsafe_remove(0) });
+            }
+            assert!(vec.is_empty());
+
+            for i in 0..42 {
+                vec.push(Num(i));
+            }
+            for i in (0..42).rev() {
+                assert_eq!(Some(Num(i)), unsafe { vec.unsafe_pop() });
+            }
+            assert_eq!(None, unsafe { vec.unsafe_pop() });
+            assert!(vec.is_empty());
+
+            for i in 0..42 {
+                vec.push(Num(i));
+            }
+            for _ in 0..42 {
+                unsafe { vec.unsafe_remove(vec.len() / 2) };
+            }
+            assert!(vec.is_empty());
+        }
+        test(FixedVec::new(42));
+        test(FixedVec::new(1000));
+    }
+    #[test]
+    fn unsafe_clone() {
+        fn test(mut vec: FixedVec<Num>) {
+            assert!(vec.is_empty());
+
+            for i in 0..53 {
+                vec.push(Num(i));
+            }
+
+            let clone = unsafe { vec.unsafe_clone() };
+            assert_eq!(vec, clone);
+        }
+
+        test(FixedVec::new(53));
+        test(FixedVec::new(1000));
+    }
 }

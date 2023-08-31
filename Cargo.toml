@@ -1,13 +1,13 @@
 [package]
 name = "orx-fixed-vec"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
-description = "`FixedVec` implements `PinnedVec`: it preserves the memory locations of its elements and can be used to create an ImpVec allowing to push to the vector with an immutable reference. `FixedVec` allows operations with same complexity and speed of `std::vec::Vec` with the drawback that it cannot exceed its preset capacity."
+description = "`FixedVec` implements `PinnedVec`: it preserves the memory locations of its elements and can be used to create an `ImpVec` allowing to push to the vector with an immutable reference. `FixedVec` allows operations with same complexity and speed of `std::vec::Vec` with the drawback that it cannot exceed its preset capacity."
 license = "MIT"
 repository = "https://github.com/orxfun/orx-fixed-vec/"
 keywords = ["vec", "array", "split", "fixed", "pinned"]
 categories = ["data-structures"]
 
 [dependencies]
-orx-pinned-vec = "0.1.1"
+orx-pinned-vec = "0.3.1"

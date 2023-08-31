@@ -46,10 +46,7 @@
 mod common_traits;
 mod fixed_vec;
 mod pinned_vec;
+/// Common relevant traits, structs, enums.
+pub mod prelude;
 
 pub use fixed_vec::FixedVec;
-
-pub mod prelude {
-    pub use crate::FixedVec;
-    pub use orx_pinned_vec::PinnedVec;
-}
