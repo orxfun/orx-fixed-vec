@@ -1,47 +1,69 @@
 # orx-fixed-vec
 
-`FixedVec` implements [`PinnedVec`](https://crates.io/crates/orx-pinned-vec); therefore,
+A fixed vector, `FixedVec`, is a vector with a strict predetermined capacity
+(see [`SplitVec`](https://crates.io/crates/orx-split-vec) for dynamic capacity version).
 
-* it preserves the memory locations of already pushed elements.
+It provides the following features:
 
-This feature eliminates a specific set of errors leading to undefined behavior,
-and hence, allows to work with a more flexible borrow checker.
+* It provides operations with the same complexity and speed as the standard vector.
+* It makes sure that the data stays **pinned** in place.
+    * `FixedVec<T>` implements [`PinnedVec<T>`](https://crates.io/crates/orx-pinned-vec) for any `T`;
+    * `FixedVec<T>` implements `PinnedVecSimple<T>` for `T: NotSelfRefVecItem`;
+    * Memory location of an item added to the fixed vector will never change
+    unless the vector is dropped or cleared.
+    * This allows the fixed vec to be converted into an [`ImpVec`](https://crates.io/crates/orx-imp-vec)
+    to enable immutable-push operations which allows for 
+    convenient, efficient and safe implementations of self-referencing data structures.
 
-Furthermore, it can be used as the underlying pinned vector of an
-[`ImpVec`](https://crates.io/crates/orx-imp-vec), which adds the additional feature
-to push to the vector with an immutable reference.
-
-Unlike, another pinned vector implementation [`SplitVec`](https://crates.io/crates/orx-split-vec),
-`FixedVec` allows operations with same complexity and speed of `std::vec::Vec`.
-
-Its drawback, on the other hand, is that:
-
-* it has a hard limit on its capacity,
-* it will panic if the caller attempts to extend the vector beyond this limit.
+## Pinned elements
 
 ```rust
 use orx_fixed_vec::prelude::*;
 
-let fixed_capacity = 42;
-let mut vec = FixedVec::new(fixed_capacity);
-assert_eq!(fixed_capacity, vec.capacity());
+let mut vec = FixedVec::new(100);
 
-let mut initial_addresses = vec![];
-for i in 0..fixed_capacity {
+// push the first element
+vec.push(42usize);
+assert_eq!(&[42], &vec);
+
+// let's get a pointer to the first element
+let addr42 = &vec[0] as *const usize;
+
+// let's push 99 new elements
+for i in 1..100 {
     vec.push(i);
-    initial_addresses.push(vec.get(i).unwrap() as *const usize);
 }
 
-assert_eq!(fixed_capacity, vec.len());
-assert_eq!(0, vec.room());
-assert!(vec.is_full());
+for (i, elem) in vec.into_iter().enumerate() {
+    assert_eq!(if i == 0 { 42 } else { i }, *elem);
+}
 
-// addresses of already pushed elements stay intact
-let final_addresses: Vec<_> = (0..fixed_capacity)
-    .map(|i| vec.get(i).unwrap() as *const usize)
-    .collect();
-assert_eq!(initial_addresses, final_addresses);
+// the memory location of the first element remains intact
+assert_eq!(addr42, &vec[0] as *const usize);
+
+// we can safely (using unsafe!) dereference it and read the correct value
+assert_eq!(unsafe { *addr42 }, 42);
 
 // the next push when `vec.is_full()` panics!
-// vec.push(42);
+// vec.push(0);
 ```
+
+## Vector with self referencing elements
+
+`FixedVec` is not meant to be a replacement for `std::vec::Vec`.
+
+However, it is useful and convenient in defining data structures, child structures of which
+hold references to each other.
+This is a very common and useful property for trees, graphs, etc.
+SplitVec allows to store children of such structures in a vector with the following features:
+
+* holding children close to each other allows for better cache locality,
+* reduces heap allocations and utilizes **thin** references rather than wide pointers,
+* while still guaranteeing that the references will remain valid.
+
+`FixedVec` receives this feature due to the following:
+
+* `FixedVec` implements `PinnedVec`; and hence, it can be wrapped by an `ImpVec`,
+* `ImpVec` allows safely building the vector where items are referencing each other,
+* `ImpVec` can then be converted back to the underlying `FixedVec`
+having the abovementioned features and safety guarantees.
