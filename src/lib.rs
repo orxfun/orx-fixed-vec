@@ -59,7 +59,7 @@
 //! * reduces heap allocations and utilizes **thin** references rather than wide pointers,
 //! * while still guaranteeing that the references will remain valid.
 //!
-//! `FixedVec` receives this feature due to the following:
+//! `FixedVec` helps this goal as follows:
 //!
 //! * `FixedVec` implements `PinnedVec`; and hence, it can be wrapped by an `ImpVec`,
 //! * `ImpVec` allows safely building the vector where items are referencing each other,

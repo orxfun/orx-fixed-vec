@@ -98,6 +98,14 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     unsafe fn unsafe_remove(&mut self, index: usize) -> T {
         self.data.remove(index)
     }
+    #[inline(always)]
+    unsafe fn unsafe_swap(&mut self, a: usize, b: usize) {
+        self.data.swap(a, b)
+    }
+    #[inline(always)]
+    unsafe fn unsafe_truncate(&mut self, len: usize) {
+        self.data.truncate(len)
+    }
 
     // required for common trait implementations
     #[inline(always)]
@@ -312,6 +320,44 @@ mod tests {
     }
 
     #[test]
+    fn swap() {
+        fn test(mut vec: FixedVec<usize>) {
+            for i in 0..42 {
+                vec.push(i);
+            }
+
+            for i in 0..21 {
+                vec.swap(i, 21 + i);
+            }
+
+            for i in 0..21 {
+                assert_eq!(21 + i, vec[i]);
+            }
+            for i in 21..42 {
+                assert_eq!(i - 21, vec[i]);
+            }
+        }
+        test(FixedVec::new(42));
+        test(FixedVec::new(1000));
+    }
+    #[test]
+    fn truncate() {
+        fn test(mut vec: FixedVec<usize>) {
+            for i in 0..42 {
+                vec.push(i);
+            }
+
+            unsafe { vec.unsafe_truncate(100) };
+            assert_eq!(vec, (0..42).collect::<Vec<_>>());
+
+            unsafe { vec.unsafe_truncate(21) };
+            assert_eq!(vec, (0..21).collect::<Vec<_>>());
+        }
+        test(FixedVec::new(42));
+        test(FixedVec::new(1000));
+    }
+
+    #[test]
     fn eq() {
         fn test(mut vec: FixedVec<usize>) {
             let slice = &(0..42).collect::<Vec<usize>>();
@@ -402,6 +448,45 @@ mod tests {
         test(FixedVec::new(42));
         test(FixedVec::new(1000));
     }
+
+    #[test]
+    fn unsafe_swap() {
+        fn test(mut vec: FixedVec<Num>) {
+            for i in 0..42 {
+                vec.push(Num(i));
+            }
+
+            for i in 0..21 {
+                unsafe { vec.unsafe_swap(i, 21 + i) };
+            }
+
+            for i in 0..21 {
+                assert_eq!(Num(21 + i), vec[i]);
+            }
+            for i in 21..42 {
+                assert_eq!(Num(i - 21), vec[i]);
+            }
+        }
+        test(FixedVec::new(42));
+        test(FixedVec::new(1000));
+    }
+    #[test]
+    fn unsafe_truncate() {
+        fn test(mut vec: FixedVec<Num>) {
+            for i in 0..42 {
+                vec.push(Num(i));
+            }
+
+            unsafe { vec.unsafe_truncate(100) };
+            assert_eq!(vec, (0..42).map(Num).collect::<Vec<_>>());
+
+            unsafe { vec.unsafe_truncate(21) };
+            assert_eq!(vec, (0..21).map(Num).collect::<Vec<_>>());
+        }
+        test(FixedVec::new(42));
+        test(FixedVec::new(1000));
+    }
+
     #[test]
     fn unsafe_clone() {
         fn test(mut vec: FixedVec<Num>) {
