@@ -3,11 +3,73 @@ use orx_pinned_vec::PinnedVec;
 use std::fmt::{Debug, Formatter, Result};
 
 impl<T> PinnedVec<T> for FixedVec<T> {
-    fn capacity(&self) -> usize {
-        self.data.capacity()
+    /// Returns the index of the `element` with the given reference.
+    /// This method has *O(1)* time complexity.
+    ///
+    /// Note that `T: Eq` is not required; reference equality is used.
+    ///
+    /// # Safety
+    ///
+    /// Since `FixedVec` implements `PinnedVec`, the underlying memory
+    /// of the vector stays pinned; i.e., is not carried to different memory
+    /// locations.
+    /// Therefore, it is possible and safe to compare an element's reference
+    /// to find its position in the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_fixed_vec::prelude::*;
+    ///
+    /// let mut vec = FixedVec::new(4);
+    /// for i in 0..4 {
+    ///     vec.push(10 * i);
+    /// }
+    ///
+    /// assert_eq!(Some(0), vec.index_of(&vec[0]));
+    /// assert_eq!(Some(1), vec.index_of(&vec[1]));
+    /// assert_eq!(Some(2), vec.index_of(&vec[2]));
+    /// assert_eq!(Some(3), vec.index_of(&vec[3]));
+    ///
+    /// // the following does not compile since vec[4] is out of bounds
+    /// // assert_eq!(Some(3), vec.index_of(&vec[4]));
+    ///
+    /// // num certainly does not belong to `vec`
+    /// let num = 42;
+    /// assert_eq!(None, vec.index_of(&num));
+    ///
+    /// // even if its value belongs
+    /// let num = 20;
+    /// assert_eq!(None, vec.index_of(&num));
+    ///
+    /// // as expected, querying elements of another vector will also fail
+    /// let eq_vec = vec![0, 10, 20, 30];
+    /// for i in 0..4 {
+    ///     assert_eq!(None, vec.index_of(&eq_vec[i]));
+    /// }
+    /// ```
+    fn index_of(&self, element: &T) -> Option<usize> {
+        let ptr_element = element as *const T as usize;
+        let ptr_beg = self.ptr_begin();
+        if ptr_element < ptr_beg {
+            None
+        } else {
+            let ptr_end = self.ptr_end();
+            if ptr_element > ptr_end {
+                None
+            } else {
+                let diff = ptr_element - ptr_beg;
+                let count = diff / std::mem::size_of::<T>();
+                Some(count)
+            }
+        }
     }
+
     fn clear(&mut self) {
         self.data.clear();
+    }
+    fn capacity(&self) -> usize {
+        self.data.capacity()
     }
 
     /// Clones and appends all elements in a slice to the Vec.
@@ -45,6 +107,24 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.get_unchecked_mut(index)
     }
 
+    #[inline(always)]
+    fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+    /// Appends an element to the back of a collection.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no available room in the vector;
+    /// i.e., `self.is_full()` or equivalently `self.len() == self.capacity()`.
+    #[inline(always)]
+    fn push(&mut self, value: T) {
+        self.push_or_panic(value)
+    }
     /// Inserts an element at position index within the vector, shifting all elements after it to the right.
     ///
     /// # Panics
@@ -73,30 +153,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.insert(index, element)
     }
     #[inline(always)]
-    fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-    #[inline(always)]
-    fn len(&self) -> usize {
-        self.data.len()
+    unsafe fn unsafe_remove(&mut self, index: usize) -> T {
+        self.data.remove(index)
     }
     #[inline(always)]
     unsafe fn unsafe_pop(&mut self) -> Option<T> {
         self.data.pop()
-    }
-    /// Appends an element to the back of a collection.
-    ///
-    /// # Panics
-    ///
-    /// Panics if there is no available room in the vector;
-    /// i.e., `self.is_full()` or equivalently `self.len() == self.capacity()`.
-    #[inline(always)]
-    fn push(&mut self, value: T) {
-        self.push_or_panic(value)
-    }
-    #[inline(always)]
-    unsafe fn unsafe_remove(&mut self, index: usize) -> T {
-        self.data.remove(index)
     }
     #[inline(always)]
     unsafe fn unsafe_swap(&mut self, a: usize, b: usize) {
@@ -106,7 +168,14 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     unsafe fn unsafe_truncate(&mut self, len: usize) {
         self.data.truncate(len)
     }
-
+    unsafe fn unsafe_clone(&self) -> Self
+    where
+        T: Clone,
+    {
+        let mut data = Vec::with_capacity(self.data.capacity());
+        data.extend_from_slice(&self.data);
+        Self { data }
+    }
     // required for common trait implementations
     #[inline(always)]
     fn partial_eq<S>(&self, other: S) -> bool
@@ -116,6 +185,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     {
         self.data == other.as_ref()
     }
+
     fn debug(&self, f: &mut Formatter<'_>) -> Result
     where
         T: Debug,
@@ -124,20 +194,31 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.fmt(f)?;
         writeln!(f)
     }
-
-    unsafe fn unsafe_clone(&self) -> Self
-    where
-        T: Clone,
-    {
-        let mut data = Vec::with_capacity(self.data.capacity());
-        data.extend_from_slice(&self.data);
-        Self { data }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
+
+    #[test]
+    fn index_of() {
+        fn test(mut vec: FixedVec<usize>) {
+            let mut another_vec = vec![];
+            for i in 0..42 {
+                vec.push(i);
+                another_vec.push(i);
+            }
+            for i in 0..vec.len() {
+                assert_eq!(Some(i), vec.index_of(&vec[i]));
+                assert_eq!(None, vec.index_of(&another_vec[i]));
+
+                let scalar = another_vec[i];
+                assert_eq!(None, vec.index_of(&scalar));
+            }
+        }
+        test(FixedVec::new(42));
+        test(FixedVec::new(1000));
+    }
 
     #[test]
     fn len_and_is_empty() {
