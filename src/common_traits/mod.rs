@@ -3,3 +3,4 @@ mod debug;
 mod eq;
 mod index;
 mod into_iter;
+mod iter;
