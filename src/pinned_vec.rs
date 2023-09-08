@@ -1,4 +1,5 @@
 use crate::FixedVec;
+use orx_pinned_vec::utils::slice;
 use orx_pinned_vec::PinnedVec;
 use std::fmt::{Debug, Formatter, Result};
 
@@ -48,21 +49,9 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     ///     assert_eq!(None, vec.index_of(&eq_vec[i]));
     /// }
     /// ```
+    #[inline(always)]
     fn index_of(&self, element: &T) -> Option<usize> {
-        let ptr_element = element as *const T as usize;
-        let ptr_beg = self.ptr_begin();
-        if ptr_element < ptr_beg {
-            None
-        } else {
-            let ptr_end = self.ptr_end();
-            if ptr_element > ptr_end {
-                None
-            } else {
-                let diff = ptr_element - ptr_beg;
-                let count = diff / std::mem::size_of::<T>();
-                Some(count)
-            }
-        }
+        slice::index_of(&self.data, element)
     }
 
     fn clear(&mut self) {
@@ -199,6 +188,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
+    use orx_pinned_vec::*;
 
     #[test]
     fn index_of() {

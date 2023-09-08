@@ -77,14 +77,6 @@ impl<T> FixedVec<T> {
 
     // helpers
     #[inline(always)]
-    pub(crate) fn ptr_begin(&self) -> usize {
-        self.data.as_ptr() as usize
-    }
-    #[inline(always)]
-    pub(crate) fn ptr_end(&self) -> usize {
-        (unsafe { self.data.as_ptr().add(self.data.len() - 1) }) as usize
-    }
-    #[inline(always)]
     #[allow(clippy::panic)]
     pub(crate) fn panic_if_not_enough_room_for(&self, num_new_items: usize) {
         if self.data.len() + num_new_items > self.data.capacity() {
@@ -183,19 +175,6 @@ mod tests {
         let mut vec = FixedVec::new(3);
         vec.push("a");
         vec.panic_if_not_enough_room_for(3);
-    }
-
-    #[test]
-    fn ptr_begin_end() {
-        let mut vec = FixedVec::new(8);
-        for _ in 0..8 {
-            vec.push('a');
-        }
-        let ptr_beg = vec.data.as_ptr() as usize;
-        assert_eq!(ptr_beg, vec.ptr_begin());
-
-        let ptr_end = ptr_beg + std::mem::size_of::<char>() * (vec.len() - 1);
-        assert_eq!(ptr_end, vec.ptr_end());
     }
 
     #[test]
