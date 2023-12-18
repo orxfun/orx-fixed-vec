@@ -4,6 +4,8 @@ use orx_pinned_vec::PinnedVec;
 use std::fmt::{Debug, Formatter, Result};
 
 impl<T> PinnedVec<T> for FixedVec<T> {
+    type Iter<'a> = std::slice::Iter<'a, T> where T: 'a, Self: 'a;
+
     /// Returns the index of the `element` with the given reference.
     /// This method has *O(1)* time complexity.
     ///
@@ -182,6 +184,10 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         write!(f, "FixedVec ")?;
         self.data.fmt(f)?;
         writeln!(f)
+    }
+
+    fn iter(&self) -> Self::Iter<'_> {
+        self.data.iter()
     }
 }
 
