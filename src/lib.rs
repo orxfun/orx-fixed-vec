@@ -2,7 +2,7 @@
 //!
 //! A fixed capacity vector with pinned elements.
 //!
-//! ## Motivation
+//! ## A. Motivation
 //!
 //! There might be various situations where pinned elements are helpful.
 //!
@@ -15,7 +15,7 @@
 //!
 //! `FixedVec` is one of the pinned vec implementations which can be wrapped by an [`ImpVec`](https://crates.io/crates/orx-imp-vec) and allow building self referential collections.
 //!
-//! ## Comparison with `SplitVec`
+//! ## B. Comparison with `SplitVec`
 //!
 //! [`SplitVec`](https://crates.io/crates/orx-pinned-vec) is another `PinnedVec` implementation aiming the same goal but with different features. You may see the comparison in the table below.
 //!
@@ -26,8 +26,48 @@
 //! | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides detailed control on how it must grow. |
 //! | It is just a wrapper around `std::vec::Vec`; hence, has similar performance. | Performs additional tasks to provide flexibility; hence, slightly slower.        |
 //!
+//! ## C. Examples
 //!
-//! ## Pinned elements
+//! ### C.1. Usage similar to `std::vec::Vec`
+//!
+//! Most common `std::vec::Vec` operations are available in `FixedVec` with the same signature.
+//!
+//! ```rust
+//! use orx_fixed_vec::prelude::*;
+//!
+//! // capacity is not optional
+//! let mut vec = FixedVec::new(4);
+//!
+//! assert_eq!(4, vec.capacity());
+//!
+//! vec.push(0);
+//! assert!(!vec.is_full());
+//! assert_eq!(3, vec.room());
+//!
+//! vec.extend_from_slice(&[1, 2, 3]);
+//! assert_eq!(vec, &[0, 1, 2, 3]);
+//! assert!(vec.is_full());
+//!
+//! // vec.push(42); // push would've panicked when vec.is_full()
+//!
+//! vec[0] = 10;
+//! assert_eq!(10, vec[0]);
+//!
+//! vec.remove(0);
+//! vec.insert(0, 0);
+//!
+//! assert_eq!(6, vec.iter().sum());
+//!
+//! assert_eq!(vec.clone(), vec);
+//!
+//! let stdvec: Vec<_> = vec.into();
+//! assert_eq!(&stdvec, &[0, 1, 2, 3]);
+//! ```
+//!
+//!
+//! ### C.2. Pinned elements
+//!
+//! Unless elements are removed from the vector, the memory location of an element priorly pushed to the `FixedVec` <ins>never</ins> changes. This guarantee is utilized by `ImpVec` in enabling immutable growth to build self referential collections.
 //!
 //! ```rust
 //! use orx_fixed_vec::prelude::*;
