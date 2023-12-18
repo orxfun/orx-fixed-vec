@@ -1,17 +1,31 @@
-//! A fixed vector, `FixedVec`, is a vector with a strict predetermined capacity
-//! (see [`SplitVec`](https://crates.io/crates/orx-split-vec) for dynamic capacity version).
+//! # orx-fixed-vec
 //!
-//! It provides the following features:
+//! A fixed capacity vector with pinned elements.
 //!
-//! * It provides operations with the same complexity and speed as the standard vector.
-//! * It makes sure that the data stays **pinned** in place.
-//!     * `FixedVec<T>` implements [`PinnedVec<T>`](https://crates.io/crates/orx-pinned-vec) for any `T`;
-//!     * `FixedVec<T>` implements `PinnedVecSimple<T>` for `T: NotSelfRefVecItem`;
-//!     * Memory location of an item added to the fixed vector will never change
-//! unless the vector is dropped or cleared.
-//!     * This allows the fixed vec to be converted into an [`ImpVec`](https://crates.io/crates/orx-imp-vec)
-//! to enable immutable-push operations which allows for
-//! convenient, efficient and safe implementations of self-referencing data structures.
+//! ## Motivation
+//!
+//! There might be various situations where pinned elements are helpful.
+//!
+//! * It is somehow required for async code. Not being an expert in the subject, leaving this [blog](https://blog.cloudflare.com/pin-and-unpin-in-rust) for the interested.
+//! * It is a requirement to make self-referential types possible.
+//!
+//! This crate focuses more on the latter. Particularly, it aims to make it safely and conveniently possible to build **self-referential collections** such as linked list, tree or graph.
+//!
+//! See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete documentation.
+//!
+//! `FixedVec` is one of the pinned vec implementations which can be wrapped by an [`ImpVec`](https://crates.io/crates/orx-imp-vec) and allow building self referential collections.
+//!
+//! ## Comparison with `SplitVec`
+//!
+//! [`SplitVec`](https://crates.io/crates/orx-pinned-vec) is another `PinnedVec` implementation aiming the same goal but with different features. You may see the comparison in the table below.
+//!
+//! | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
+//! |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+//! | Implements `PinnedVec`.                                                      | Implements `PinnedVec`.                                                          |
+//! | Requires a capacity while creating.                                          | Capacity is optional.                                                            |
+//! | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides detailed control on how it must grow. |
+//! | It is just a wrapper around `std::vec::Vec`; hence, has similar performance. | Performs additional tasks to provide flexibility; hence, slightly slower.        |
+//!
 //!
 //! ## Pinned elements
 //!
@@ -46,25 +60,9 @@
 //! // vec.push(0);
 //! ```
 //!
-//! ## Vector with self referencing elements
+//! ## License
 //!
-//! `FixedVec` is not meant to be a replacement for `std::vec::Vec`.
-//!
-//! However, it is useful and convenient in defining data structures, child structures of which
-//! hold references to each other.
-//! This is a very common and useful property for trees, graphs, etc.
-//! SplitVec allows to store children of such structures in a vector with the following features:
-//!
-//! * holding children close to each other allows for better cache locality,
-//! * reduces heap allocations and utilizes **thin** references rather than wide pointers,
-//! * while still guaranteeing that the references will remain valid.
-//!
-//! `FixedVec` helps this goal as follows:
-//!
-//! * `FixedVec` implements `PinnedVec`; and hence, it can be wrapped by an `ImpVec`,
-//! * `ImpVec` allows safely building the vector where items are referencing each other,
-//! * `ImpVec` can then be converted back to the underlying `FixedVec`
-//! having the abovementioned features and safety guarantees.
+//! This library is licensed under MIT license. See LICENSE for details.
 
 #![warn(
     missing_docs,
