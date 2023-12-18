@@ -1,6 +1,6 @@
 [package]
 name = "orx-fixed-vec"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
 description = "A fixed capacity vector with pinned elements."
