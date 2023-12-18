@@ -21,8 +21,8 @@ See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete document
 
 | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
 |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| Implements `PinnedVec`.                                                      | Implements `PinnedVec`.                                                          |
-| Requires a capacity while creating.                                          | Capacity is optional.                                                            |
+| Implements `PinnedVec` => can be wrapped by an `ImpVec`.                     | Implements `PinnedVec` => can be wrapped by an `ImpVec`.                         |
+| Requires exact capacity to be known while creating.                          | Can be created with any level of prior information about required capacity.      |
 | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides detailed control on how it must grow. |
 | It is just a wrapper around `std::vec::Vec`; hence, has similar performance. | Performs additional tasks to provide flexibility; hence, slightly slower.        |
 
@@ -65,7 +65,7 @@ assert_eq!(&stdvec, &[0, 1, 2, 3]);
 ```
 
 
-### C.2. Pinned elements
+### C.2. Pinned Elements
 
 Unless elements are removed from the vector, the memory location of an element priorly pushed to the `FixedVec` <ins>never</ins> changes. This guarantee is utilized by `ImpVec` in enabling immutable growth to build self referential collections.
 

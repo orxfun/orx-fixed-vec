@@ -21,8 +21,8 @@
 //!
 //! | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
 //! |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-//! | Implements `PinnedVec`.                                                      | Implements `PinnedVec`.                                                          |
-//! | Requires a capacity while creating.                                          | Capacity is optional.                                                            |
+//! | Implements `PinnedVec` => can be wrapped by an `ImpVec`.                     | Implements `PinnedVec` => can be wrapped by an `ImpVec`.                         |
+//! | Requires exact capacity to be known while creating.                          | Can be created with any level of prior information about required capacity.      |
 //! | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides detailed control on how it must grow. |
 //! | It is just a wrapper around `std::vec::Vec`; hence, has similar performance. | Performs additional tasks to provide flexibility; hence, slightly slower.        |
 //!
