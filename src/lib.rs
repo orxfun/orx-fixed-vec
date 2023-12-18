@@ -17,7 +17,7 @@
 //!
 //! ## B. Comparison with `SplitVec`
 //!
-//! [`SplitVec`](https://crates.io/crates/orx-pinned-vec) is another `PinnedVec` implementation aiming the same goal but with different features. You may see the comparison in the table below.
+//! [`SplitVec`](https://crates.io/crates/orx-split-vec) is another `PinnedVec` implementation aiming the same goal but with different features. You may see the comparison in the table below.
 //!
 //! | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
 //! |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
