@@ -1,4 +1,5 @@
 use crate::FixedVec;
+use std::ops::Deref;
 
 impl<T> AsRef<[T]> for FixedVec<T> {
     fn as_ref(&self) -> &[T] {
@@ -8,6 +9,14 @@ impl<T> AsRef<[T]> for FixedVec<T> {
 impl<T> AsMut<[T]> for FixedVec<T> {
     fn as_mut(&mut self) -> &mut [T] {
         &mut self.data
+    }
+}
+
+impl<T> Deref for FixedVec<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
     }
 }
 

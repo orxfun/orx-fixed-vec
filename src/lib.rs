@@ -1,17 +1,15 @@
 //! # orx-fixed-vec
 //!
-//! A fixed capacity vector with pinned elements.
+//! An efficient fixed capacity vector with pinned elements.
 //!
 //! ## A. Motivation
 //!
 //! There might be various situations where pinned elements are helpful.
 //!
 //! * It is somehow required for async code, following [blog](https://blog.cloudflare.com/pin-and-unpin-in-rust) could be useful for the interested.
-//! * It is a requirement to make self-referential types possible.
+//! * It is crucial in representing self-referential types with thin references.
 //!
-//! This crate focuses more on the latter. Particularly, it aims to make it safely and conveniently possible to build **self-referential collections** such as linked list, tree or graph.
-//!
-//! See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete documentation.
+//! This crate focuses more on the latter. Particularly, it aims to make it safe and convenient to build **performant self-referential collections** such as linked lists, trees or graphs. See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete documentation on the motivation.
 //!
 //! `FixedVec` is one of the pinned vec implementations which can be wrapped by an [`ImpVec`](https://crates.io/crates/orx-imp-vec) and allow building self referential collections.
 //!
@@ -23,8 +21,10 @@
 //! |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
 //! | Implements `PinnedVec` => can be wrapped by an `ImpVec`.                     | Implements `PinnedVec` => can be wrapped by an `ImpVec`.                         |
 //! | Requires exact capacity to be known while creating.                          | Can be created with any level of prior information about required capacity.      |
-//! | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides detailed control on how it must grow. |
-//! | It is just a wrapper around `std::vec::Vec`; hence, has similar performance. | Performs additional tasks to provide flexibility; hence, slightly slower.        |
+//! | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides control on how it must grow. |
+//! | It is just a wrapper around `std::vec::Vec`; hence, has equivalent performance. | Performance-optimized built-in growth strategies also have `std::vec::Vec` equivalent performance. |
+//!
+//! After the performance optimizations on the `SplitVec`, it is now comparable to `std::vec::Vec` in terms of performance. This might make `SplitVec` a dominating choice over `FixedVec`.
 //!
 //! ## C. Examples
 //!
@@ -65,7 +65,7 @@
 //! ```
 //!
 //!
-//! ### C.2. Pinned elements
+//! ### C.2. Pinned Elements
 //!
 //! Unless elements are removed from the vector, the memory location of an element priorly pushed to the `FixedVec` <ins>never</ins> changes. This guarantee is utilized by `ImpVec` in enabling immutable growth to build self referential collections.
 //!
@@ -93,12 +93,21 @@
 //! // the memory location of the first element remains intact
 //! assert_eq!(addr42, &vec[0] as *const usize);
 //!
-//! // we can safely (using unsafe!) dereference it and read the correct value
+//! // we can safely dereference it and read the correct value
+//! // the method is still unsafe for FixedVec
+//! // but the undelrying guarantee will be used by ImpVec
 //! assert_eq!(unsafe { *addr42 }, 42);
 //!
 //! // the next push when `vec.is_full()` panics!
 //! // vec.push(0);
 //! ```
+//!
+//! ## E. Benchmarks
+//!
+//! Recall that the motivation of using a split vector is to get benefit of the pinned elements, rather than to be used in place of the standard vector which is highly efficient. The aim of the benchmarks is to make sure that the performance gap is kept within acceptable and constant limits.
+//!
+//! Since `FixedVec` is just a wrapper around the `std::vec::Vec` with additional guarantees on pinned elements; it is expected to have equivalent performance. This is verified by the benchmarks which can be found at the at [benches](https://github.com/orxfun/orx-fixed-vec/blob/main/benches) folder.
+//!
 //!
 //! ## License
 //!

@@ -186,6 +186,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         writeln!(f)
     }
 
+    #[inline(always)]
     fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
     }
