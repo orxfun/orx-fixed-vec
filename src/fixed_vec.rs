@@ -74,6 +74,12 @@ impl<T> FixedVec<T> {
     pub fn is_full(&self) -> bool {
         self.data.capacity() == self.data.len()
     }
+    /// Extracts a slice containing the entire vector.
+    ///
+    /// Equivalent to &s[..].
+    pub fn as_slice(&self) -> &[T] {
+        self.data.as_slice()
+    }
 
     // helpers
     #[inline(always)]

@@ -1,9 +1,9 @@
 [package]
 name = "orx-fixed-vec"
-version = "0.4.5"
+version = "0.4.6"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
-description = "A fixed capacity vector with pinned elements."
+description = "An efficient fixed capacity vector with pinned elements."
 license = "MIT"
 repository = "https://github.com/orxfun/orx-fixed-vec/"
 keywords = ["vec", "pinned", "array", "split", "fixed"]
@@ -11,3 +11,13 @@ categories = ["data-structures"]
 
 [dependencies]
 orx-pinned-vec = "0.5"
+
+
+[[bench]]
+name = "random_access"
+harness = false
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+rand = "0.8"
+rand_chacha = "0.3"
