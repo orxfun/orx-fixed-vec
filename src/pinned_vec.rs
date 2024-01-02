@@ -5,6 +5,7 @@ use std::fmt::{Debug, Formatter, Result};
 
 impl<T> PinnedVec<T> for FixedVec<T> {
     type Iter<'a> = std::slice::Iter<'a, T> where T: 'a, Self: 'a;
+    type IterMut<'a> = std::slice::IterMut<'a, T> where T: 'a, Self: 'a;
 
     /// Returns the index of the `element` with the given reference.
     /// This method has *O(1)* time complexity.
@@ -189,6 +190,11 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     #[inline(always)]
     fn iter(&self) -> Self::Iter<'_> {
         self.data.iter()
+    }
+
+    #[inline(always)]
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        self.data.iter_mut()
     }
 }
 
@@ -467,6 +473,27 @@ mod tests {
 
         test(FixedVec::new(53));
         test(FixedVec::new(1000));
+    }
+
+    #[test]
+    fn iter_iter_mut() {
+        let mut vec = FixedVec::new(4);
+        vec.push('a');
+        vec.push('b');
+
+        let mut iter = vec.iter();
+        assert_eq!(Some(&'a'), iter.next());
+        assert_eq!(Some(&'b'), iter.next());
+        assert_eq!(None, iter.next());
+
+        for x in vec.iter_mut() {
+            *x = 'x';
+        }
+
+        let mut iter = vec.iter();
+        assert_eq!(Some(&'x'), iter.next());
+        assert_eq!(Some(&'x'), iter.next());
+        assert_eq!(None, iter.next());
     }
 
     #[derive(Debug, PartialEq, Clone)]
