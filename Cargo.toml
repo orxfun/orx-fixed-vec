@@ -1,13 +1,13 @@
 [package]
 name = "orx-fixed-vec"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["orxfun <orx.ugur.arikan@gmail.com>"]
-description = "An efficient fixed capacity vector with pinned elements."
+description = "An efficient constant access time vector with fixed capacity and pinned elements."
 license = "MIT"
 repository = "https://github.com/orxfun/orx-fixed-vec/"
 keywords = ["vec", "pinned", "array", "split", "fixed"]
-categories = ["data-structures"]
+categories = ["data-structures", "rust-patterns"]
 
 [dependencies]
 orx-pinned-vec = "1.0"
