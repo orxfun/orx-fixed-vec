@@ -1,6 +1,6 @@
 # orx-fixed-vec
 
-An efficient fixed capacity vector with pinned elements.
+An efficient constant access time vector with fixed capacity and pinned elements. 
 
 ## A. Motivation
 
@@ -9,7 +9,7 @@ There might be various situations where pinned elements are helpful.
 * It is somehow required for async code, following [blog](https://blog.cloudflare.com/pin-and-unpin-in-rust) could be useful for the interested.
 * It is crucial in representing self-referential types with thin references.
 
-This crate focuses more on the latter. Particularly, it aims to make it safe and convenient to build **performant self-referential collections** such as linked lists, trees or graphs. See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete documentation on the motivation.
+This crate focuses on the latter. Particularly, it aims to make it safe and convenient to build **performant self-referential collections** such as linked lists, trees or graphs. See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete documentation on the motivation.
 
 `FixedVec` is one of the pinned vec implementations which can be wrapped by an [`ImpVec`](https://crates.io/crates/orx-imp-vec) and allow building self referential collections.
 
@@ -102,11 +102,13 @@ assert_eq!(unsafe { *addr42 }, 42);
 // vec.push(0);
 ```
 
+## D. Relation to the `ImpVec`
+
+Providing pinned memory location elements with `PinnedVec` is the first block for building self referential structures; the second building block is the [`ImpVec`](https://crates.io/crates/orx-imp-vec). An `ImpVec` wraps any `PinnedVec` implementation and provides specialized methods built on the pinned element guarantee in order to allow building self referential collections.
+
 ## E. Benchmarks
 
-Recall that the motivation of using a split vector is to get benefit of the pinned elements, rather than to be used in place of the standard vector which is highly efficient. The aim of the benchmarks is to make sure that the performance gap is kept within acceptable and constant limits.
-
-Since `FixedVec` is just a wrapper around the `std::vec::Vec` with additional guarantees on pinned elements; it is expected to have equivalent performance. This is verified by the benchmarks which can be found at the at [benches](https://github.com/orxfun/orx-fixed-vec/blob/main/benches) folder.
+Since `FixedVec` is just a wrapper around the `std::vec::Vec` with additional pinned element guarantee; it is expected to have equivalent performance. This is tested and confirmed by benchmarks that can be found at the at [benches](https://github.com/orxfun/orx-fixed-vec/blob/main/benches) folder.
 
 
 ## License
