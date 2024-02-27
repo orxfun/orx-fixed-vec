@@ -1,5 +1,4 @@
 use crate::FixedVec;
-use orx_pinned_vec::PinnedVec;
 
 impl<T, U> PartialEq<U> for FixedVec<T>
 where
@@ -7,7 +6,7 @@ where
     T: PartialEq,
 {
     fn eq(&self, other: &U) -> bool {
-        <Self as PinnedVec<T>>::partial_eq(self, other.as_ref())
+        self.data.as_slice() == other.as_ref()
     }
 }
 

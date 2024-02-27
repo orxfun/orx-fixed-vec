@@ -1,11 +1,13 @@
 use crate::FixedVec;
 use orx_pinned_vec::utils::slice;
 use orx_pinned_vec::PinnedVec;
-use std::fmt::{Debug, Formatter, Result};
+use std::iter::Rev;
 
 impl<T> PinnedVec<T> for FixedVec<T> {
     type Iter<'a> = std::slice::Iter<'a, T> where T: 'a, Self: 'a;
     type IterMut<'a> = std::slice::IterMut<'a, T> where T: 'a, Self: 'a;
+    type IterRev<'a> = Rev<std::slice::Iter<'a, T>> where T: 'a, Self: 'a;
+    type IterMutRev<'a> = Rev<std::slice::IterMut<'a, T>> where T: 'a, Self: 'a;
 
     /// Returns the index of the `element` with the given reference.
     /// This method has *O(1)* time complexity.
@@ -100,6 +102,24 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     }
 
     #[inline(always)]
+    fn first(&self) -> Option<&T> {
+        self.data.first()
+    }
+    #[inline(always)]
+    fn last(&self) -> Option<&T> {
+        self.data.last()
+    }
+
+    #[inline(always)]
+    unsafe fn first_unchecked(&self) -> &T {
+        self.data.get_unchecked(0)
+    }
+    #[inline(always)]
+    unsafe fn last_unchecked(&self) -> &T {
+        self.data.get_unchecked(self.data.len() - 1)
+    }
+
+    #[inline(always)]
     fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
@@ -124,67 +144,26 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     ///
     /// Panics also if there is no available room in the vector;
     /// i.e., `self.is_full()` or equivalently `self.len() == self.capacity()`.
-    ///
-    /// # Safety
-    ///
-    /// This operation is **unsafe** when `T` is not `NotSelfRefVecItem`.
-    /// To pick the conservative approach, every T which does not implement `NotSelfRefVecItem`
-    /// is assumed to be a vector item referencing other vector items.
-    ///
-    /// `insert` is unsafe since insertion of a new element at an arbitrary position of the vector
-    /// typically changes the positions of already existing elements.
-    ///
-    /// When the elements are holding references to other elements of the vector,
-    /// this change in positions makes the references invalid.
-    ///
-    /// On the other hand, any vector implementing `PinnedVec<T>` where `T: NotSelfRefVecItem`
-    /// implements `PinnedVecSimple<T>` which implements the safe version of this method.
     #[inline(always)]
-    unsafe fn unsafe_insert(&mut self, index: usize, element: T) {
+    fn insert(&mut self, index: usize, element: T) {
         self.panic_if_not_enough_room_for(1);
         self.data.insert(index, element)
     }
     #[inline(always)]
-    unsafe fn unsafe_remove(&mut self, index: usize) -> T {
+    fn remove(&mut self, index: usize) -> T {
         self.data.remove(index)
     }
     #[inline(always)]
-    unsafe fn unsafe_pop(&mut self) -> Option<T> {
+    fn pop(&mut self) -> Option<T> {
         self.data.pop()
     }
     #[inline(always)]
-    unsafe fn unsafe_swap(&mut self, a: usize, b: usize) {
+    fn swap(&mut self, a: usize, b: usize) {
         self.data.swap(a, b)
     }
     #[inline(always)]
-    unsafe fn unsafe_truncate(&mut self, len: usize) {
+    fn truncate(&mut self, len: usize) {
         self.data.truncate(len)
-    }
-    unsafe fn unsafe_clone(&self) -> Self
-    where
-        T: Clone,
-    {
-        let mut data = Vec::with_capacity(self.data.capacity());
-        data.extend_from_slice(&self.data);
-        Self { data }
-    }
-    // required for common trait implementations
-    #[inline(always)]
-    fn partial_eq<S>(&self, other: S) -> bool
-    where
-        S: AsRef<[T]>,
-        T: PartialEq,
-    {
-        self.data == other.as_ref()
-    }
-
-    fn debug(&self, f: &mut Formatter<'_>) -> Result
-    where
-        T: Debug,
-    {
-        write!(f, "FixedVec ")?;
-        self.data.fmt(f)?;
-        writeln!(f)
     }
 
     #[inline(always)]
@@ -196,12 +175,36 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.data.iter_mut()
     }
+
+    #[inline(always)]
+    fn iter_rev(&self) -> Self::IterRev<'_> {
+        self.data.iter().rev()
+    }
+
+    #[inline(always)]
+    fn iter_mut_rev(&mut self) -> Self::IterMutRev<'_> {
+        self.data.iter_mut().rev()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
     use orx_pinned_vec::*;
+
+    #[test]
+    fn pinned_vec_exact_capacity() {
+        for cap in [0, 10, 124, 5421, 89746] {
+            test_pinned_vec(FixedVec::new(cap), cap);
+        }
+    }
+
+    #[test]
+    fn pinned_vec_loose_capacity() {
+        for cap in [0, 10, 124, 5421] {
+            test_pinned_vec(FixedVec::new(cap * 2), cap);
+        }
+    }
 
     #[test]
     fn index_of() {
@@ -331,6 +334,49 @@ mod tests {
     }
 
     #[test]
+    fn first_last() {
+        let mut vec = FixedVec::new(6);
+
+        assert!(vec.first().is_none());
+        assert!(vec.last().is_none());
+
+        vec.push(42);
+
+        assert_eq!(vec.first(), Some(&42));
+        assert_eq!(vec.last(), Some(&42));
+
+        unsafe {
+            assert_eq!(vec.first_unchecked(), &42);
+            assert_eq!(vec.last_unchecked(), &42);
+        }
+
+        vec.push(7);
+
+        assert_eq!(vec.first(), Some(&42));
+        assert_eq!(vec.last(), Some(&7));
+
+        unsafe {
+            assert_eq!(vec.first_unchecked(), &42);
+            assert_eq!(vec.last_unchecked(), &7);
+        }
+
+        vec.insert(1, 56421);
+
+        assert_eq!(vec.first(), Some(&42));
+        assert_eq!(vec.last(), Some(&7));
+
+        unsafe {
+            assert_eq!(vec.first_unchecked(), &42);
+            assert_eq!(vec.last_unchecked(), &7);
+        }
+
+        vec.clear();
+
+        assert!(vec.first().is_none());
+        assert!(vec.last().is_none());
+    }
+
+    #[test]
     fn extend_from_slice() {
         fn test(mut vec: FixedVec<usize>) {
             vec.extend_from_slice(&(0..42).collect::<Vec<_>>());
@@ -431,10 +477,10 @@ mod tests {
                 vec.push(i);
             }
 
-            unsafe { vec.unsafe_truncate(100) };
+            vec.truncate(100);
             assert_eq!(vec, (0..42).collect::<Vec<_>>());
 
-            unsafe { vec.unsafe_truncate(21) };
+            vec.truncate(21);
             assert_eq!(vec, (0..21).collect::<Vec<_>>());
         }
         test(FixedVec::new(42));
@@ -496,16 +542,37 @@ mod tests {
         assert_eq!(None, iter.next());
     }
 
+    #[test]
+    fn rev_iter_iter_mut() {
+        let mut vec = FixedVec::new(4);
+        vec.push('a');
+        vec.push('b');
+
+        let mut iter = vec.iter_rev();
+        assert_eq!(Some(&'b'), iter.next());
+        assert_eq!(Some(&'a'), iter.next());
+        assert_eq!(None, iter.next());
+
+        for x in vec.iter_mut_rev() {
+            *x = 'x';
+        }
+
+        let mut iter = vec.iter_rev();
+        assert_eq!(Some(&'x'), iter.next());
+        assert_eq!(Some(&'x'), iter.next());
+        assert_eq!(None, iter.next());
+    }
+
     #[derive(Debug, PartialEq, Clone)]
     struct Num(usize);
     #[test]
-    fn unsafe_insert() {
+    fn insert() {
         fn test(mut vec: FixedVec<Num>) {
             for i in 0..42 {
                 vec.push(Num(i));
             }
             for i in 0..42 {
-                unsafe { vec.unsafe_insert(i, Num(100 + i)) };
+                vec.insert(i, Num(100 + i));
             }
 
             for i in 0..42 {
@@ -514,98 +581,6 @@ mod tests {
             }
         }
         test(FixedVec::new(84));
-        test(FixedVec::new(1000));
-    }
-    #[test]
-    fn unsafe_shrink() {
-        fn test(mut vec: FixedVec<Num>) {
-            for i in 0..42 {
-                vec.push(Num(i));
-                assert_eq!(Num(i), unsafe { vec.unsafe_remove(0) });
-                assert!(vec.is_empty());
-            }
-
-            for i in 0..42 {
-                vec.push(Num(i));
-            }
-            for i in 0..42 {
-                assert_eq!(Num(i), unsafe { vec.unsafe_remove(0) });
-            }
-            assert!(vec.is_empty());
-
-            for i in 0..42 {
-                vec.push(Num(i));
-            }
-            for i in (0..42).rev() {
-                assert_eq!(Some(Num(i)), unsafe { vec.unsafe_pop() });
-            }
-            assert_eq!(None, unsafe { vec.unsafe_pop() });
-            assert!(vec.is_empty());
-
-            for i in 0..42 {
-                vec.push(Num(i));
-            }
-            for _ in 0..42 {
-                unsafe { vec.unsafe_remove(vec.len() / 2) };
-            }
-            assert!(vec.is_empty());
-        }
-        test(FixedVec::new(42));
-        test(FixedVec::new(1000));
-    }
-
-    #[test]
-    fn unsafe_swap() {
-        fn test(mut vec: FixedVec<Num>) {
-            for i in 0..42 {
-                vec.push(Num(i));
-            }
-
-            for i in 0..21 {
-                unsafe { vec.unsafe_swap(i, 21 + i) };
-            }
-
-            for i in 0..21 {
-                assert_eq!(Num(21 + i), vec[i]);
-            }
-            for i in 21..42 {
-                assert_eq!(Num(i - 21), vec[i]);
-            }
-        }
-        test(FixedVec::new(42));
-        test(FixedVec::new(1000));
-    }
-    #[test]
-    fn unsafe_truncate() {
-        fn test(mut vec: FixedVec<Num>) {
-            for i in 0..42 {
-                vec.push(Num(i));
-            }
-
-            unsafe { vec.unsafe_truncate(100) };
-            assert_eq!(vec, (0..42).map(Num).collect::<Vec<_>>());
-
-            unsafe { vec.unsafe_truncate(21) };
-            assert_eq!(vec, (0..21).map(Num).collect::<Vec<_>>());
-        }
-        test(FixedVec::new(42));
-        test(FixedVec::new(1000));
-    }
-
-    #[test]
-    fn unsafe_clone() {
-        fn test(mut vec: FixedVec<Num>) {
-            assert!(vec.is_empty());
-
-            for i in 0..53 {
-                vec.push(Num(i));
-            }
-
-            let clone = unsafe { vec.unsafe_clone() };
-            assert_eq!(vec, clone);
-        }
-
-        test(FixedVec::new(53));
         test(FixedVec::new(1000));
     }
 }

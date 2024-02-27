@@ -1,4 +1,5 @@
 mod as_ref;
+mod clone;
 mod debug;
 mod eq;
 mod index;
