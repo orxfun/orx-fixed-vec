@@ -4,14 +4,13 @@ An efficient constant access time vector with fixed capacity and pinned elements
 
 ## A. Motivation
 
-There might be various situations where pinned elements are helpful.
+There are various situations where pinned elements are necessary.
 
-* It is somehow required for async code, following [blog](https://blog.cloudflare.com/pin-and-unpin-in-rust) could be useful for the interested.
-* It is crucial in representing self-referential types with thin references.
+* It is critical in enabling **efficient, convenient and safe self-referential collections** with thin references, see [`SelfRefCol`](https://crates.io/crates/orx-self-ref-col) for details.
+* It is essential in allowing an **immutable push** vector; i.e., [`ImpVec`](https://crates.io/crates/orx-imp-vec). This is a very useful operation when the desired collection is a bag or a container of things, rather than having a collective meaning. In such cases, `ImpVec` avoids heap allocations and wide pointers such as `Box` or `Rc` or etc.
+* It is important for **async** code; following [blog](https://blog.cloudflare.com/pin-and-unpin-in-rust) could be useful for the interested.
 
-This crate focuses on the latter. Particularly, it aims to make it safe and convenient to build **performant self-referential collections** such as linked lists, trees or graphs. See [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) for complete documentation on the motivation.
-
-`FixedVec` is one of the pinned vec implementations which can be wrapped by an [`ImpVec`](https://crates.io/crates/orx-imp-vec) and allow building self referential collections.
+*As explained in [rust-docs](https://doc.rust-lang.org/std/pin/index.html), there exist `Pin` and `Unpin` types for similar purposes. However, the solution is complicated and low level using `PhantomPinned`, `NonNull`, `dangling`, `Box::pin`, pointer accesses, etc.*
 
 ## B. Comparison with `SplitVec`
 
@@ -19,7 +18,7 @@ This crate focuses on the latter. Particularly, it aims to make it safe and conv
 
 | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
 |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| Implements `PinnedVec` => can be wrapped by an `ImpVec`.                     | Implements `PinnedVec` => can be wrapped by an `ImpVec`.                         |
+| Implements `PinnedVec` => can be wrapped by an `ImpVec` or `SelfRefCol`.     | Implements `PinnedVec` => can be wrapped by an `ImpVec` or `SelfRefCol`.         |
 | Requires exact capacity to be known while creating.                          | Can be created with any level of prior information about required capacity.      |
 | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides control on how it must grow. |
 | It is just a wrapper around `std::vec::Vec`; hence, has equivalent performance. | Performance-optimized built-in growth strategies also have `std::vec::Vec` equivalent performance. |
@@ -60,14 +59,13 @@ assert_eq!(6, vec.iter().sum());
 
 assert_eq!(vec.clone(), vec);
 
-let stdvec: Vec<_> = vec.into();
-assert_eq!(&stdvec, &[0, 1, 2, 3]);
+let std_vec: Vec<_> = vec.into();
+assert_eq!(&std_vec, &[0, 1, 2, 3]);
 ```
-
 
 ### C.2. Pinned Elements
 
-Unless elements are removed from the vector, the memory location of an element priorly pushed to the `FixedVec` <ins>never</ins> changes. This guarantee is utilized by `ImpVec` in enabling immutable growth to build self referential collections.
+Unless elements are removed from the vector, the memory location of an element already pushed to the `FixedVec` <ins>never</ins> changes. This guarantee is utilized by `ImpVec` in enabling immutable growth to build self referential collections.
 
 ```rust
 use orx_fixed_vec::prelude::*;
@@ -94,19 +92,15 @@ for i in 0..100 {
 assert_eq!(addr42, &vec[0] as *const usize);
 
 // we can safely dereference it and read the correct value
-// the method is still unsafe for FixedVec
-// but the undelrying guarantee will be used by ImpVec
+// dereferencing is still unsafe for FixedVec,
+// but the underlying guarantee will be used by wrappers such as ImpVec or SelfRefCol
 assert_eq!(unsafe { *addr42 }, 42);
 
 // the next push when `vec.is_full()` panics!
 // vec.push(0);
 ```
 
-## D. Relation to the `ImpVec`
-
-Providing pinned memory location elements with `PinnedVec` is the first block for building self referential structures; the second building block is the [`ImpVec`](https://crates.io/crates/orx-imp-vec). An `ImpVec` wraps any `PinnedVec` implementation and provides specialized methods built on the pinned element guarantee in order to allow building self referential collections.
-
-## E. Benchmarks
+## D. Benchmarks
 
 Since `FixedVec` is just a wrapper around the `std::vec::Vec` with additional pinned element guarantee; it is expected to have equivalent performance. This is tested and confirmed by benchmarks that can be found at the at [benches](https://github.com/orxfun/orx-fixed-vec/blob/main/benches) folder.
 
