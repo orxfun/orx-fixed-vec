@@ -6,7 +6,7 @@
 //!
 //! There are various situations where pinned elements are necessary.
 //!
-//! * It is critical in enabling **efficient, convenient and safe self-referential collections** with thin references, see [`SelfRefCol`](https://crates.io/crates/orx-self-ref-col) for details.
+//! * It is critical in enabling **efficient, convenient and safe self-referential collections** with thin references, see [`SelfRefCol`](https://crates.io/crates/orx-selfref-col) for details.
 //! * It is essential in allowing an **immutable push** vector; i.e., [`ImpVec`](https://crates.io/crates/orx-imp-vec). This is a very useful operation when the desired collection is a bag or a container of things, rather than having a collective meaning. In such cases, `ImpVec` avoids heap allocations and wide pointers such as `Box` or `Rc` or etc.
 //! * It is important for **async** code; following [blog](https://blog.cloudflare.com/pin-and-unpin-in-rust) could be useful for the interested.
 //!
@@ -14,7 +14,7 @@
 //!
 //! ## B. Comparison with `SplitVec`
 //!
-//! [`SplitVec`](https://crates.io/crates/orx-split-vec) is another `PinnedVec` implementation aiming the same goal but with different features. You may see the comparison in the table below.
+//! [`SplitVec`](https://crates.io/crates/orx-split-vec) is another [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) implementation aiming the same goal but with different features. You may see the comparison in the table below.
 //!
 //! | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
 //! |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
@@ -65,7 +65,7 @@
 //!
 //! ### C.2. Pinned Elements
 //!
-//! Unless elements are removed from the vector, the memory location of an element already pushed to the `FixedVec` <ins>never</ins> changes. This guarantee is utilized by `ImpVec` in enabling immutable growth to build self referential collections.
+//! Unless elements are removed from the vector, the memory location of an element already pushed to the `SplitVec` <ins>never</ins> changes unless explicitly changed.
 //!
 //! ```rust
 //! use orx_fixed_vec::prelude::*;
