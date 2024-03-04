@@ -37,9 +37,6 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     /// assert_eq!(Some(2), vec.index_of(&vec[2]));
     /// assert_eq!(Some(3), vec.index_of(&vec[3]));
     ///
-    /// // the following does not compile since vec[4] is out of bounds
-    /// // assert_eq!(Some(3), vec.index_of(&vec[4]));
-    ///
     /// // num certainly does not belong to `vec`
     /// let num = 42;
     /// assert_eq!(None, vec.index_of(&num));
@@ -57,6 +54,53 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     #[inline(always)]
     fn index_of(&self, element: &T) -> Option<usize> {
         slice::index_of(&self.data, element)
+    }
+
+    /// Returns whether or not the `element` with the given reference belongs to the vector.
+    /// This method has *O(1)* time complexity.
+    ///
+    /// Note that `T: Eq` is not required; memory address is used.
+    ///
+    /// # Safety
+    ///
+    /// Since `FixedVec` implements `PinnedVec`, the underlying memory
+    /// of the vector stays pinned; i.e., is not carried to different memory
+    /// locations.
+    /// Therefore, it is possible and safe to compare an element's reference
+    /// to find its position in the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_fixed_vec::prelude::*;
+    ///
+    /// let mut vec = FixedVec::new(4);
+    /// for i in 0..4 {
+    ///     vec.push(10 * i);
+    /// }
+    ///
+    /// assert!(vec.contains_reference(&vec[0]));
+    /// assert!(vec.contains_reference(&vec[1]));
+    /// assert!(vec.contains_reference(&vec[2]));
+    /// assert!(vec.contains_reference(&vec[3]));
+    ///
+    /// // num certainly does not belong to `vec`
+    /// let num = 42;
+    /// assert!(!vec.contains_reference(&num));
+    ///
+    /// // even if its value belongs
+    /// let num = 20;
+    /// assert!(!vec.contains_reference(&num));
+    ///
+    /// // as expected, querying elements of another vector will also fail
+    /// let eq_vec = vec![0, 10, 20, 30];
+    /// for i in 0..4 {
+    ///     assert!(!vec.contains_reference(&eq_vec[i]));
+    /// }
+    /// ```
+    #[inline(always)]
+    fn contains_reference(&self, element: &T) -> bool {
+        slice::contains_reference(&self.data, element)
     }
 
     fn clear(&mut self) {
@@ -207,7 +251,7 @@ mod tests {
     }
 
     #[test]
-    fn index_of() {
+    fn index_of_and_contains() {
         fn test(mut vec: FixedVec<usize>) {
             let mut another_vec = vec![];
             for i in 0..42 {
@@ -216,10 +260,14 @@ mod tests {
             }
             for i in 0..vec.len() {
                 assert_eq!(Some(i), vec.index_of(&vec[i]));
+                assert!(vec.contains_reference(&vec[i]));
+
                 assert_eq!(None, vec.index_of(&another_vec[i]));
+                assert!(!vec.contains_reference(&another_vec[i]));
 
                 let scalar = another_vec[i];
                 assert_eq!(None, vec.index_of(&scalar));
+                assert!(!vec.contains_reference(&scalar));
             }
         }
         test(FixedVec::new(42));
