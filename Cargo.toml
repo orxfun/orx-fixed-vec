@@ -10,7 +10,7 @@ keywords = ["vec", "pinned", "array", "split", "fixed"]
 categories = ["data-structures", "rust-patterns"]
 
 [dependencies]
-orx-pinned-vec = "2.1.0"
+orx-pinned-vec = "2.1"
 
 [[bench]]
 name = "random_access"
