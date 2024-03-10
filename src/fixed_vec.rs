@@ -36,6 +36,7 @@ impl<T> FixedVec<T> {
             data: Vec::with_capacity(fixed_capacity),
         }
     }
+
     /// Returns the available room for new items; i.e.,
     /// `capacity() - len()`.
     ///
@@ -54,6 +55,7 @@ impl<T> FixedVec<T> {
     pub fn room(&self) -> usize {
         self.data.capacity() - self.data.len()
     }
+
     /// Return whether the fixed vector is full or not;
     /// equivalent to `capacity() == len()` or `room() == 0`.
     ///
@@ -74,6 +76,7 @@ impl<T> FixedVec<T> {
     pub fn is_full(&self) -> bool {
         self.data.capacity() == self.data.len()
     }
+
     /// Extracts a slice containing the entire vector.
     ///
     /// Equivalent to &s[..].
@@ -89,6 +92,7 @@ impl<T> FixedVec<T> {
             panic!("{}", ERR_MSG_OUT_OF_ROOM);
         }
     }
+
     #[inline(always)]
     #[allow(clippy::panic)]
     pub(crate) fn push_or_panic(&mut self, value: T) {
