@@ -229,6 +229,11 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn iter_mut_rev(&mut self) -> Self::IterMutRev<'_> {
         self.data.iter_mut().rev()
     }
+
+    #[inline(always)]
+    unsafe fn set_len(&mut self, new_len: usize) {
+        self.data.set_len(new_len)
+    }
 }
 
 #[cfg(test)]
