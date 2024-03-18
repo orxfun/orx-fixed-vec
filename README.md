@@ -35,7 +35,7 @@ After the performance optimizations on the `SplitVec`, it is now comparable to `
 Most common `std::vec::Vec` operations are available in `FixedVec` with the same signature.
 
 ```rust
-use orx_fixed_vec::prelude::*;
+use orx_fixed_vec::*;
 
 // capacity is not optional
 let mut vec = FixedVec::new(4);
@@ -71,7 +71,7 @@ assert_eq!(&std_vec, &[0, 1, 2, 3]);
 Unless elements are removed from the vector, the memory location of an element already pushed to the `SplitVec` <ins>never</ins> changes unless explicitly changed.
 
 ```rust
-use orx_fixed_vec::prelude::*;
+use orx_fixed_vec::*;
 
 let mut vec = FixedVec::new(100);
 

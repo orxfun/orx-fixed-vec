@@ -2,8 +2,8 @@ use criterion::{
     black_box, criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, BenchmarkId,
     Criterion,
 };
-use orx_fixed_vec::prelude::*;
-use rand::prelude::*;
+use orx_fixed_vec::*;
+use rand::*;
 use rand_chacha::ChaCha8Rng;
 
 fn get_indices(n: usize) -> Vec<usize> {

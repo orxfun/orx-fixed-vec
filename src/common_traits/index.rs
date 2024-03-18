@@ -25,7 +25,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::*;
 
     #[test]
     fn index() {

@@ -12,7 +12,7 @@ impl<T> IntoIterator for FixedVec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::*;
 
     #[test]
     fn into_iter() {

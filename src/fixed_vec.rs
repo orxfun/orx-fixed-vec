@@ -24,7 +24,7 @@ impl<T> FixedVec<T> {
     /// # Examples
     ///
     /// ```rust
-    /// use orx_fixed_vec::prelude::*;
+    /// use orx_fixed_vec::*;
     ///
     /// let mut vec = FixedVec::new(7);
     /// vec.push(42);
@@ -43,7 +43,7 @@ impl<T> FixedVec<T> {
     /// # Examples
     ///
     /// ```rust
-    /// use orx_fixed_vec::prelude::*;
+    /// use orx_fixed_vec::*;
     ///
     /// let mut vec = FixedVec::new(7);
     /// vec.push(42);
@@ -62,7 +62,7 @@ impl<T> FixedVec<T> {
     /// # Examples
     ///
     /// ```rust
-    /// use orx_fixed_vec::prelude::*;
+    /// use orx_fixed_vec::*;
     ///
     /// let mut vec = FixedVec::new(2);
     /// assert!(!vec.is_full());
@@ -120,7 +120,7 @@ const ERR_MSG_OUT_OF_ROOM: &str =
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::*;
 
     #[test]
     fn new() {
@@ -161,6 +161,15 @@ mod tests {
         assert_eq!(vec.len(), vec.capacity());
         assert_eq!(0, vec.room());
         assert!(vec.is_full());
+    }
+
+    #[test]
+    fn as_slice() {
+        let fixed_vec: FixedVec<_> = (0..20).collect();
+        let vec: Vec<_> = (0..20).collect();
+
+        let slice = fixed_vec.as_slice();
+        assert_eq!(slice, &vec);
     }
 
     #[test]
