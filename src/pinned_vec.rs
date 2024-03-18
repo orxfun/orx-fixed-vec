@@ -25,7 +25,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     /// # Examples
     ///
     /// ```
-    /// use orx_fixed_vec::prelude::*;
+    /// use orx_fixed_vec::*;
     ///
     /// let mut vec = FixedVec::new(4);
     /// for i in 0..4 {
@@ -72,7 +72,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     /// # Examples
     ///
     /// ```
-    /// use orx_fixed_vec::prelude::*;
+    /// use orx_fixed_vec::*;
     ///
     /// let mut vec = FixedVec::new(4);
     /// for i in 0..4 {
@@ -230,6 +230,14 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.iter_mut().rev()
     }
 
+    unsafe fn get_ptr_mut(&mut self, index: usize) -> Option<*mut T> {
+        if index < self.data.capacity() {
+            Some(self.data.as_mut_ptr().add(index))
+        } else {
+            None
+        }
+    }
+
     #[inline(always)]
     unsafe fn set_len(&mut self, new_len: usize) {
         self.data.set_len(new_len)
@@ -238,7 +246,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::*;
     use orx_pinned_vec::*;
 
     #[test]

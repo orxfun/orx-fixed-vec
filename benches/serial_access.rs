@@ -2,7 +2,7 @@ use criterion::{
     black_box, criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, BenchmarkId,
     Criterion,
 };
-use orx_fixed_vec::prelude::*;
+use orx_fixed_vec::*;
 
 fn get_value<const N: usize>(i: usize) -> [u64; N] {
     let modulo = i % 3;
@@ -61,8 +61,8 @@ fn test_for_type<T: Default + PartialEq + std::fmt::Debug>(
         });
 
         group.bench_with_input(BenchmarkId::new("fixed_vec", &treatment), n, |b, _| {
-            let fixedvec = fixed_vec(black_box(*n), value);
-            b.iter(|| calc(black_box(add), black_box(&fixedvec)))
+            let fixed_vec = fixed_vec(black_box(*n), value);
+            b.iter(|| calc(black_box(add), black_box(&fixed_vec)))
         });
     }
 }

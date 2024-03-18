@@ -22,7 +22,8 @@ impl<T> Deref for FixedVec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::*;
+    use std::ops::Deref;
 
     #[test]
     fn as_ref() {
@@ -32,6 +33,18 @@ mod tests {
         }
 
         assert_eq!(vec.as_ref(), &[0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn deref() {
+        let mut vec = FixedVec::new(4);
+        for i in 0..vec.capacity() {
+            vec.push(i);
+        }
+
+        let slice = Deref::deref(&vec);
+        assert_eq!(slice, &[0, 1, 2, 3]);
+        assert_eq!(slice, vec.as_slice());
     }
 
     #[test]

@@ -35,7 +35,7 @@
 //! Most common `std::vec::Vec` operations are available in `FixedVec` with the same signature.
 //!
 //! ```rust
-//! use orx_fixed_vec::prelude::*;
+//! use orx_fixed_vec::*;
 //!
 //! // capacity is not optional
 //! let mut vec = FixedVec::new(4);
@@ -71,7 +71,7 @@
 //! Unless elements are removed from the vector, the memory location of an element already pushed to the `SplitVec` <ins>never</ins> changes unless explicitly changed.
 //!
 //! ```rust
-//! use orx_fixed_vec::prelude::*;
+//! use orx_fixed_vec::*;
 //!
 //! let mut vec = FixedVec::new(100);
 //!
@@ -127,7 +127,6 @@
 mod common_traits;
 mod fixed_vec;
 mod pinned_vec;
-/// Common relevant traits, structs, enums.
-pub mod prelude;
 
 pub use fixed_vec::FixedVec;
+pub use orx_pinned_vec::PinnedVec;
