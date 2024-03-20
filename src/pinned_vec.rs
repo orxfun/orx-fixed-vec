@@ -1,6 +1,6 @@
 use crate::FixedVec;
 use orx_pinned_vec::utils::slice;
-use orx_pinned_vec::PinnedVec;
+use orx_pinned_vec::{PinnedVec, PinnedVecGrowthError};
 use std::iter::Rev;
 
 impl<T> PinnedVec<T> for FixedVec<T> {
@@ -241,6 +241,15 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     #[inline(always)]
     unsafe fn set_len(&mut self, new_len: usize) {
         self.data.set_len(new_len)
+    }
+
+    fn try_grow(&mut self) -> Result<usize, PinnedVecGrowthError> {
+        match self.len() {
+            len if len == self.capacity() => {
+                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned)
+            }
+            _ => Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
+        }
     }
 }
 
@@ -641,6 +650,45 @@ mod tests {
                 assert_eq!(Some(&Num(100 + i)), vec.get(i));
             }
         }
+        test(FixedVec::new(84));
+        test(FixedVec::new(1000));
+    }
+
+    #[test]
+    fn try_grow() {
+        fn test(mut vec: FixedVec<Num>) {
+            for i in 0..42 {
+                assert_eq!(
+                    Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
+                    vec.try_grow()
+                );
+                vec.push(Num(i));
+            }
+            for i in 0..42 {
+                assert_eq!(
+                    Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
+                    vec.try_grow()
+                );
+                vec.insert(i, Num(100 + i));
+            }
+
+            assert_eq!(42 * 2, vec.len());
+
+            let capacity = vec.capacity();
+            for i in vec.len()..capacity {
+                vec.push(Num(i));
+            }
+
+            assert_eq!(capacity, vec.len());
+
+            assert_eq!(
+                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+                vec.try_grow()
+            );
+
+            assert_eq!(capacity, vec.len());
+        }
+
         test(FixedVec::new(84));
         test(FixedVec::new(1000));
     }
