@@ -129,4 +129,4 @@ mod fixed_vec;
 mod pinned_vec;
 
 pub use fixed_vec::FixedVec;
-pub use orx_pinned_vec::PinnedVec;
+pub use orx_pinned_vec::{PinnedVec, PinnedVecGrowthError};
