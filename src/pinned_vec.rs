@@ -251,6 +251,13 @@ impl<T> PinnedVec<T> for FixedVec<T> {
             _ => Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
         }
     }
+
+    unsafe fn grow_to(&mut self, new_capacity: usize) -> Result<usize, PinnedVecGrowthError> {
+        match self.capacity() {
+            current_capacity if current_capacity >= new_capacity => Ok(current_capacity),
+            _ => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -655,12 +662,17 @@ mod tests {
     }
 
     #[test]
-    fn try_grow() {
+    fn try_grow_and_grow_to() {
         fn test(mut vec: FixedVec<Num>) {
             for i in 0..42 {
                 assert_eq!(
                     Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
                     vec.try_grow()
+                );
+                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1) });
+                assert_eq!(
+                    Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+                    unsafe { vec.grow_to(1001) }
                 );
                 vec.push(Num(i));
             }
@@ -668,6 +680,11 @@ mod tests {
                 assert_eq!(
                     Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
                     vec.try_grow()
+                );
+                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1) });
+                assert_eq!(
+                    Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+                    unsafe { vec.grow_to(1001) }
                 );
                 vec.insert(i, Num(100 + i));
             }
@@ -684,6 +701,11 @@ mod tests {
             assert_eq!(
                 Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
                 vec.try_grow()
+            );
+            assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1) });
+            assert_eq!(
+                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+                unsafe { vec.grow_to(1001) }
             );
 
             assert_eq!(capacity, vec.len());
