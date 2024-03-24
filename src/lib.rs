@@ -130,3 +130,4 @@ mod pinned_vec;
 pub mod prelude;
 
 pub use fixed_vec::FixedVec;
+pub use orx_pinned_vec::{CapacityState, PinnedVec, PinnedVecGrowthError};
