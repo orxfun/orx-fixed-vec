@@ -2,7 +2,7 @@ use criterion::{
     black_box, criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, BenchmarkId,
     Criterion,
 };
-use orx_fixed_vec::*;
+use orx_fixed_vec::prelude::*;
 
 fn get_value<const N: usize>(i: usize) -> [u64; N] {
     let modulo = i % 3;

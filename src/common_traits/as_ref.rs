@@ -22,7 +22,7 @@ impl<T> Deref for FixedVec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::prelude::*;
     use std::ops::Deref;
 
     #[test]

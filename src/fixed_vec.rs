@@ -24,7 +24,7 @@ impl<T> FixedVec<T> {
     /// # Examples
     ///
     /// ```rust
-    /// use orx_fixed_vec::*;
+    /// use orx_fixed_vec::prelude::*;
     ///
     /// let mut vec = FixedVec::new(7);
     /// vec.push(42);
@@ -43,7 +43,7 @@ impl<T> FixedVec<T> {
     /// # Examples
     ///
     /// ```rust
-    /// use orx_fixed_vec::*;
+    /// use orx_fixed_vec::prelude::*;
     ///
     /// let mut vec = FixedVec::new(7);
     /// vec.push(42);
@@ -62,7 +62,7 @@ impl<T> FixedVec<T> {
     /// # Examples
     ///
     /// ```rust
-    /// use orx_fixed_vec::*;
+    /// use orx_fixed_vec::prelude::*;
     ///
     /// let mut vec = FixedVec::new(2);
     /// assert!(!vec.is_full());
@@ -120,7 +120,7 @@ const ERR_MSG_OUT_OF_ROOM: &str =
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::prelude::*;
 
     #[test]
     fn new() {
