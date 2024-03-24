@@ -9,7 +9,7 @@ impl<T> FromIterator<T> for FixedVec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::prelude::*;
 
     #[test]
     fn from_iter() {

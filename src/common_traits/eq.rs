@@ -12,7 +12,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::prelude::*;
 
     #[test]
     fn eq() {
