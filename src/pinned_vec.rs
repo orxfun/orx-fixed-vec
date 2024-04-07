@@ -257,18 +257,24 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         }
     }
 
-    unsafe fn grow_to(&mut self, new_capacity: usize) -> Result<usize, PinnedVecGrowthError> {
+    unsafe fn grow_to(
+        &mut self,
+        new_capacity: usize,
+        _: bool,
+    ) -> Result<usize, PinnedVecGrowthError> {
         match self.capacity() {
             current_capacity if current_capacity >= new_capacity => Ok(current_capacity),
             _ => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
         }
     }
 
+    #[inline(always)]
     unsafe fn concurrently_grow_to(
         &mut self,
         new_capacity: usize,
+        zero_memory: bool,
     ) -> Result<usize, PinnedVecGrowthError> {
-        self.grow_to(new_capacity)
+        self.grow_to(new_capacity, zero_memory)
     }
 }
 
@@ -688,11 +694,13 @@ mod tests {
                     Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
                     vec.try_grow()
                 );
-                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1) });
-                assert_eq!(Ok(vec.capacity()), unsafe { vec.concurrently_grow_to(1) });
+                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1, true) });
+                assert_eq!(Ok(vec.capacity()), unsafe {
+                    vec.concurrently_grow_to(1, false)
+                });
                 assert_eq!(
                     Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                    unsafe { vec.grow_to(1001) }
+                    unsafe { vec.grow_to(1001, false) }
                 );
                 vec.push(Num(i));
             }
@@ -701,14 +709,14 @@ mod tests {
                     Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
                     vec.try_grow()
                 );
-                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1) });
+                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1, false) });
                 assert_eq!(
                     Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                    unsafe { vec.grow_to(1001) }
+                    unsafe { vec.grow_to(1001, true) }
                 );
                 assert_eq!(
                     Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                    unsafe { vec.concurrently_grow_to(1001) }
+                    unsafe { vec.concurrently_grow_to(1001, true) }
                 );
                 vec.insert(i, Num(100 + i));
             }
@@ -726,15 +734,17 @@ mod tests {
                 Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
                 vec.try_grow()
             );
-            assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1) });
+            assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1, false) });
             assert_eq!(
                 Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                unsafe { vec.grow_to(1001) }
+                unsafe { vec.grow_to(1001, true) }
             );
-            assert_eq!(Ok(vec.capacity()), unsafe { vec.concurrently_grow_to(1) });
+            assert_eq!(Ok(vec.capacity()), unsafe {
+                vec.concurrently_grow_to(1, true)
+            });
             assert_eq!(
                 Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                unsafe { vec.concurrently_grow_to(1001) }
+                unsafe { vec.concurrently_grow_to(1001, false) }
             );
 
             assert_eq!(capacity, vec.len());
