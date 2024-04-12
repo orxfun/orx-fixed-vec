@@ -1,6 +1,7 @@
 use crate::FixedVec;
 use orx_pinned_vec::utils::slice;
 use orx_pinned_vec::{CapacityState, PinnedVec, PinnedVecGrowthError};
+use std::cmp::Ordering;
 use std::iter::Rev;
 
 impl<T> PinnedVec<T> for FixedVec<T> {
@@ -275,6 +276,16 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         zero_memory: bool,
     ) -> Result<usize, PinnedVecGrowthError> {
         self.grow_to(new_capacity, zero_memory)
+    }
+
+    fn try_reserve_maximum_concurrent_capacity(
+        &mut self,
+        new_maximum_capacity: usize,
+    ) -> Result<usize, String> {
+        match self.capacity().cmp(&new_maximum_capacity) {
+            Ordering::Less => Err("FixedVec cannot grow beyond its original capacity.".into()),
+            _ => Ok(self.capacity()),
+        }
     }
 }
 
@@ -752,5 +763,17 @@ mod tests {
 
         test(FixedVec::new(84));
         test(FixedVec::new(1000));
+    }
+
+    #[test]
+    fn try_reserve_maximum_concurrent_capacity() {
+        let mut vec: FixedVec<String> = FixedVec::new(42);
+
+        assert_eq!(vec.try_reserve_maximum_concurrent_capacity(42), Ok(42));
+        assert_eq!(vec.try_reserve_maximum_concurrent_capacity(7), Ok(42));
+        assert_eq!(
+            vec.try_reserve_maximum_concurrent_capacity(43),
+            Err("FixedVec cannot grow beyond its original capacity.".to_string())
+        );
     }
 }
