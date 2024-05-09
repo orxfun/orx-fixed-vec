@@ -86,23 +86,22 @@ impl<T> FixedVec<T> {
 
     // helpers
     #[inline(always)]
-    #[allow(clippy::panic)]
     pub(crate) fn panic_if_not_enough_room_for(&self, num_new_items: usize) {
-        if self.data.len() + num_new_items > self.data.capacity() {
-            panic!("{}", ERR_MSG_OUT_OF_ROOM);
-        }
+        assert!(
+            self.data.len() + num_new_items <= self.data.capacity(),
+            "{}",
+            ERR_MSG_OUT_OF_ROOM
+        );
     }
 
     #[inline(always)]
-    #[allow(clippy::panic)]
     pub(crate) fn push_or_panic(&mut self, value: T) {
-        let len = self.data.len();
-        if len == self.data.capacity() {
-            panic!("{}", ERR_MSG_OUT_OF_ROOM);
-        } else {
-            *unsafe { self.data.get_unchecked_mut(len) } = value;
-            unsafe { self.data.set_len(len + 1) };
-        }
+        assert!(
+            self.data.len() < self.data.capacity(),
+            "{}",
+            ERR_MSG_OUT_OF_ROOM
+        );
+        self.data.push(value);
     }
 }
 impl<T> From<Vec<T>> for FixedVec<T> {
