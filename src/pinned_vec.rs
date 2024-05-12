@@ -249,6 +249,13 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.set_len(new_len)
     }
 
+    fn binary_search_by<F>(&self, f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&T) -> Ordering,
+    {
+        self.data.binary_search_by(f)
+    }
+
     fn try_grow(&mut self) -> Result<usize, PinnedVecGrowthError> {
         match self.len() {
             len if len == self.capacity() => {
