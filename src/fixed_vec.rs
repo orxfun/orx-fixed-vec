@@ -37,6 +37,28 @@ impl<T> FixedVec<T> {
         }
     }
 
+    /// Returns the fixed vector into inner standard vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_fixed_vec::prelude::*;
+    ///
+    /// let mut fixed_vec = FixedVec::new(64);
+    /// fixed_vec.push('a');
+    /// fixed_vec.push('b');
+    /// assert_eq!(fixed_vec.as_slice(), &['a', 'b']);
+    ///
+    /// let vec = fixed_vec.into_inner();
+    /// assert_eq!(vec.as_slice(), &['a', 'b']);
+    ///
+    /// let fixed_vec: FixedVec<_> = vec.into();
+    /// assert_eq!(fixed_vec.as_slice(), &['a', 'b']);
+    /// ```
+    pub fn into_inner(self) -> Vec<T> {
+        self.data
+    }
+
     /// Returns the available room for new items; i.e.,
     /// `capacity() - len()`.
     ///
@@ -104,16 +126,19 @@ impl<T> FixedVec<T> {
         self.data.push(value);
     }
 }
+
 impl<T> From<Vec<T>> for FixedVec<T> {
     fn from(value: Vec<T>) -> Self {
         Self { data: value }
     }
 }
+
 impl<T> From<FixedVec<T>> for Vec<T> {
     fn from(value: FixedVec<T>) -> Self {
         value.data
     }
 }
+
 const ERR_MSG_OUT_OF_ROOM: &str =
     "FixedVec is full, a fixed capacity vector cannot exceed its initial capacity.";
 

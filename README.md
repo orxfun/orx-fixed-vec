@@ -3,15 +3,15 @@
 [![orx-fixed-vec crate](https://img.shields.io/crates/v/orx-fixed-vec.svg)](https://crates.io/crates/orx-fixed-vec)
 [![orx-fixed-vec documentation](https://docs.rs/orx-fixed-vec/badge.svg)](https://docs.rs/orx-fixed-vec)
 
-An efficient constant access time vector with fixed capacity and pinned elements. 
+An efficient constant access time vector with fixed capacity and pinned elements.
 
 ## A. Motivation
 
-There are various situations where pinned elements are necessary.
+There are various situations where pinned elements are critical.
 
 * It is critical in enabling **efficient, convenient and safe self-referential collections** with thin references, see [`SelfRefCol`](https://crates.io/crates/orx-selfref-col) for details, and its special cases such as [`LinkedList`](https://crates.io/crates/orx-linked-list).
+* It is important for **concurrent** programs as it eliminates safety concerns related with elements implicitly carried to different memory locations. This helps reducing and dealing with the complexity of concurrency, and leads to efficient concurrent data structures. See [`ConcurrentIter`](https://crates.io/crates/orx-concurrent-iter), [`ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) or [`ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) for such concurrent data structures which are conveniently built on the pinned element guarantees of pinned vectors.
 * It is essential in allowing an **immutable push** vector; i.e., [`ImpVec`](https://crates.io/crates/orx-imp-vec). This is a very useful operation when the desired collection is a bag or a container of things, rather than having a collective meaning. In such cases, `ImpVec` allows avoiding certain borrow checker complexities, heap allocations and wide pointers such as `Box` or `Rc` or etc.
-* It is important for **concurrent** programs since it eliminates safety concerns related with elements implicitly carried to different memory locations. This helps reducing and dealing with the complexity of concurrency. [`ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) is a very simplistic and efficient concurrent data structure built on top of pinned vector guarantees.
 
 ## B. Comparison with `SplitVec`
 
@@ -19,7 +19,7 @@ There are various situations where pinned elements are necessary.
 
 | **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
 |------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| Implements `PinnedVec` => can be wrapped by an `ImpVec` or `SelfRefCol` or `ConcurrentBag`. | Implements `PinnedVec` => can as well be wrapped by them.         |
+| Implements `PinnedVec` => can be wrapped by an `ImpVec` or `SelfRefCol` or `ConcurrentBag`, etc. | Implements `PinnedVec` => can as well be wrapped by them.         |
 | Requires exact capacity to be known while creating.                          | Can be created with any level of prior information about required capacity.      |
 | Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides control on how it must grow. |
 | It is just a wrapper around `std::vec::Vec`; hence, has equivalent performance. | Performance-optimized built-in growth strategies also have `std::vec::Vec` equivalent performance. |

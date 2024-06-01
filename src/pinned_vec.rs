@@ -1,14 +1,18 @@
+use crate::helpers::range::{range_end, range_start};
 use crate::FixedVec;
 use orx_pinned_vec::utils::slice;
 use orx_pinned_vec::{CapacityState, PinnedVec, PinnedVecGrowthError};
 use std::cmp::Ordering;
 use std::iter::Rev;
+use std::ops::RangeBounds;
 
 impl<T> PinnedVec<T> for FixedVec<T> {
     type Iter<'a> = std::slice::Iter<'a, T> where T: 'a, Self: 'a;
     type IterMut<'a> = std::slice::IterMut<'a, T> where T: 'a, Self: 'a;
     type IterRev<'a> = Rev<std::slice::Iter<'a, T>> where T: 'a, Self: 'a;
     type IterMutRev<'a> = Rev<std::slice::IterMut<'a, T>> where T: 'a, Self: 'a;
+    type SliceIter<'a> = Option<&'a [T]> where T: 'a, Self: 'a;
+    type SliceMutIter<'a> = Option<&'a mut [T]> where T: 'a, Self: 'a;
 
     /// Returns the index of the `element` with the given reference.
     /// This method has *O(1)* time complexity.
@@ -236,6 +240,91 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.iter_mut().rev()
     }
 
+    /// Returns the view on the required `range` as an Option of slice:
+    ///
+    /// * returns None if the range is out of bounds;
+    /// * returns Some of the slice when the range is within bounds of the fixed vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_fixed_vec::prelude::*;
+    ///
+    /// let mut vec = FixedVec::new(10);
+    ///
+    /// vec.extend_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    ///
+    /// assert_eq!(vec.as_slice(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    ///
+    /// // within bounds
+    /// assert_eq!(vec.slices(0..4).unwrap(), &[0, 1, 2, 3]);
+    /// assert_eq!(vec.slices(5..7).unwrap(), &[5, 6]);
+    /// assert_eq!(vec.slices(8..10).unwrap(), &[8, 9]);
+    ///
+    /// // OutOfBounds
+    /// assert!(vec.slices(5..12).is_none());
+    /// assert!(vec.slices(10..11).is_none());
+    /// ```
+    fn slices<R: RangeBounds<usize>>(&self, range: R) -> Self::SliceIter<'_> {
+        let a = range_start(&range);
+        let b = range_end(&range, self.len());
+
+        match b.saturating_sub(a) {
+            0 => Some(&[]),
+            _ => match (a.cmp(&self.len()), b.cmp(&self.len())) {
+                (Ordering::Equal | Ordering::Greater, _) => None,
+                (_, Ordering::Greater) => None,
+                _ => Some(&self.data[a..b]),
+            },
+        }
+    }
+
+    /// Returns a mutable view on the required `range` as an Option of slice:
+    ///
+    /// * returns None if the range is out of bounds;
+    /// * returns Some of the slice when the range is within bounds of the fixed vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use orx_fixed_vec::prelude::*;
+    ///
+    /// let mut vec = FixedVec::new(10);
+    ///
+    /// vec.extend_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    ///
+    /// assert_eq!(vec.as_slice(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    ///
+    /// // within bounds
+    /// let mut slice = vec.slices_mut(0..4).unwrap();
+    /// assert_eq!(slice, &[0, 1, 2, 3]);
+    /// slice[1] *= 10;
+    /// assert_eq!(vec.as_slice(), &[0, 10, 2, 3, 4, 5, 6, 7, 8, 9]);
+    ///
+    ///
+    /// let mut slice = vec.slices_mut(5..7).unwrap();
+    /// assert_eq!(slice, &[5, 6]);
+    /// slice[0] *= 10;
+    /// assert_eq!(vec.as_slice(), &[0, 10, 2, 3, 4, 50, 6, 7, 8, 9]);
+    ///
+    /// // OutOfBounds
+    /// assert!(vec.slices_mut(5..12).is_none());
+    /// assert!(vec.slices_mut(10..11).is_none());
+    /// ```
+    fn slices_mut<R: RangeBounds<usize>>(&mut self, range: R) -> Self::SliceMutIter<'_> {
+        let a = range_start(&range);
+        let b = range_end(&range, self.len());
+
+        match b.saturating_sub(a) {
+            0 => Some(&mut []),
+            _ => match (a.cmp(&self.len()), b.cmp(&self.len())) {
+                (Ordering::Equal | Ordering::Greater, _) => None,
+                (_, Ordering::Greater) => None,
+                _ => Some(&mut self.data[a..b]),
+            },
+        }
+    }
+
     unsafe fn get_ptr_mut(&mut self, index: usize) -> Option<*mut T> {
         if index < self.data.capacity() {
             Some(self.data.as_mut_ptr().add(index))
@@ -276,6 +365,29 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         }
     }
 
+    fn grow_and_initialize<F>(
+        &mut self,
+        new_min_len: usize,
+        f: F,
+    ) -> Result<usize, PinnedVecGrowthError>
+    where
+        F: Fn() -> T,
+        Self: Sized,
+    {
+        let (prior_len, capacity) = (self.len(), self.capacity());
+        match new_min_len.cmp(&capacity) {
+            Ordering::Greater => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+            _ => {
+                for _ in prior_len..capacity {
+                    self.data.push(f());
+                }
+                debug_assert_eq!(self.capacity(), capacity);
+                debug_assert_eq!(self.len(), capacity);
+                Ok(capacity)
+            }
+        }
+    }
+
     #[inline(always)]
     unsafe fn concurrently_grow_to(
         &mut self,
@@ -313,6 +425,13 @@ mod tests {
         for cap in [0, 10, 124, 5421] {
             test_pinned_vec(FixedVec::new(cap * 2), cap);
         }
+    }
+
+    #[test]
+    fn into_inner() {
+        let fixed: FixedVec<_> = (0..16).collect();
+        let vec = fixed.into_inner();
+        assert_eq!(vec, (0..16).collect::<Vec<_>>())
     }
 
     #[test]
@@ -642,6 +761,104 @@ mod tests {
     }
 
     #[test]
+    fn slices() {
+        #![allow(for_loops_over_fallibles)]
+        let mut vec = FixedVec::new(184);
+
+        for i in 0..184 {
+            assert!(vec.slices(i..i + 1).is_none());
+            assert!(vec.slices(0..i + 1).is_none());
+            vec.push(i);
+        }
+
+        let slice = vec.slices(0..vec.len());
+        let mut combined = vec![];
+        for s in slice {
+            combined.extend_from_slice(s);
+        }
+        for i in 0..184 {
+            assert_eq!(i, vec[i]);
+            assert_eq!(i, combined[i]);
+        }
+
+        let begin = vec.len() / 4;
+        let end = 3 * vec.len() / 4;
+        let slice = vec.slices(begin..end);
+        let mut combined = vec![];
+        for s in slice {
+            combined.extend_from_slice(s);
+        }
+        for i in begin..end {
+            assert_eq!(i, vec[i]);
+            assert_eq!(i, combined[i - begin]);
+        }
+    }
+
+    #[test]
+    fn slices_mut() {
+        #![allow(for_loops_over_fallibles)]
+        let mut vec = FixedVec::new(184);
+
+        for i in 0..184 {
+            assert!(vec.slices_mut(i..i + 1).is_none());
+            assert!(vec.slices_mut(0..i + 1).is_none());
+            vec.push(i);
+        }
+
+        let slice = vec.slices_mut(0..vec.len());
+        let mut combined = vec![];
+        for s in slice {
+            combined.extend_from_slice(s);
+        }
+        for i in 0..184 {
+            assert_eq!(i, vec[i]);
+            assert_eq!(i, combined[i]);
+        }
+
+        let begin = vec.len() / 4;
+        let end = 3 * vec.len() / 4;
+        let slice = vec.slices_mut(begin..end);
+        let mut combined = vec![];
+        for s in slice {
+            combined.extend_from_slice(s);
+        }
+        for i in begin..end {
+            assert_eq!(i, vec[i]);
+            assert_eq!(i, combined[i - begin]);
+        }
+
+        vec.clear();
+
+        for _ in 0..184 {
+            vec.push(0);
+        }
+
+        fn update(slice: Option<&mut [usize]>, begin: usize) {
+            let mut val = begin;
+            for s in slice {
+                for x in s {
+                    *x = val;
+                    val += 1;
+                }
+            }
+        }
+        let mut fill = |begin: usize, end: usize| {
+            let range = begin..end;
+            update(vec.slices_mut(range), begin);
+        };
+
+        fill(0, 14);
+        fill(14, 56);
+        fill(56, 77);
+        fill(77, 149);
+        fill(149, 182);
+        fill(182, 184);
+        for i in 0..184 {
+            assert_eq!(vec.get(i), Some(&i));
+        }
+    }
+
+    #[test]
     fn iter_iter_mut() {
         let mut vec = FixedVec::new(4);
         vec.push('a');
@@ -782,5 +999,20 @@ mod tests {
             vec.try_reserve_maximum_concurrent_capacity(43),
             Err("FixedVec cannot grow beyond its original capacity.".to_string())
         );
+    }
+
+    #[test]
+    fn grow_and_initialize() {
+        let mut vec: FixedVec<String> = FixedVec::new(42);
+
+        let result = vec.grow_and_initialize(30, || String::from("x"));
+        assert_eq!(result, Ok(42));
+
+        assert_eq!(vec.len(), 42);
+        assert_eq!(vec.capacity(), 42);
+        assert_eq!(vec.as_slice(), vec![String::from("x"); 42]);
+
+        let result = vec.grow_and_initialize(43, || Default::default());
+        assert!(result.is_err());
     }
 }
