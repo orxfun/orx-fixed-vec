@@ -123,12 +123,17 @@
 )]
 
 mod common_traits;
+mod concurrent_pinned_vec;
 mod fixed_vec;
 mod helpers;
+mod into_concurrent_pinned_vec;
 mod pinned_vec;
 
 /// Common relevant traits, structs, enums.
 pub mod prelude;
 
+pub use concurrent_pinned_vec::ConcurrentFixedVec;
 pub use fixed_vec::FixedVec;
-pub use orx_pinned_vec::{CapacityState, PinnedVec, PinnedVecGrowthError};
+pub use orx_pinned_vec::{
+    ConcurrentPinnedVec, IntoConcurrentPinnedVec, PinnedVec, PinnedVecGrowthError,
+};
