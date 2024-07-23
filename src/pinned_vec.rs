@@ -1,10 +1,19 @@
 use crate::helpers::range::{range_end, range_start};
 use crate::FixedVec;
 use orx_pinned_vec::utils::slice;
-use orx_pinned_vec::{CapacityState, PinnedVec, PinnedVecGrowthError};
+use orx_pinned_vec::{CapacityState, PinnedVec};
+use orx_pseudo_default::PseudoDefault;
 use std::cmp::Ordering;
 use std::iter::Rev;
 use std::ops::RangeBounds;
+
+impl<T> PseudoDefault for FixedVec<T> {
+    fn pseudo_default() -> Self {
+        Self {
+            data: Default::default(),
+        }
+    }
+}
 
 impl<T> PinnedVec<T> for FixedVec<T> {
     type Iter<'a> = std::slice::Iter<'a, T> where T: 'a, Self: 'a;
@@ -142,14 +151,17 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn get(&self, index: usize) -> Option<&T> {
         self.data.get(index)
     }
+
     #[inline(always)]
     fn get_mut(&mut self, index: usize) -> Option<&mut T> {
         self.data.get_mut(index)
     }
+
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &T {
         self.data.get_unchecked(index)
     }
+
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
         self.data.get_unchecked_mut(index)
@@ -159,6 +171,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn first(&self) -> Option<&T> {
         self.data.first()
     }
+
     #[inline(always)]
     fn last(&self) -> Option<&T> {
         self.data.last()
@@ -168,6 +181,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     unsafe fn first_unchecked(&self) -> &T {
         self.data.get_unchecked(0)
     }
+
     #[inline(always)]
     unsafe fn last_unchecked(&self) -> &T {
         self.data.get_unchecked(self.data.len() - 1)
@@ -177,10 +191,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
+
     #[inline(always)]
     fn len(&self) -> usize {
         self.data.len()
     }
+
     /// Appends an element to the back of a collection.
     ///
     /// # Panics
@@ -191,6 +207,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     fn push(&mut self, value: T) {
         self.push_or_panic(value)
     }
+
     /// Inserts an element at position index within the vector, shifting all elements after it to the right.
     ///
     /// # Panics
@@ -203,18 +220,22 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.panic_if_not_enough_room_for(1);
         self.data.insert(index, element)
     }
+
     #[inline(always)]
     fn remove(&mut self, index: usize) -> T {
         self.data.remove(index)
     }
+
     #[inline(always)]
     fn pop(&mut self) -> Option<T> {
         self.data.pop()
     }
+
     #[inline(always)]
     fn swap(&mut self, a: usize, b: usize) {
         self.data.swap(a, b)
     }
+
     #[inline(always)]
     fn truncate(&mut self, len: usize) {
         self.data.truncate(len)
@@ -311,6 +332,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     /// assert!(vec.slices_mut(5..12).is_none());
     /// assert!(vec.slices_mut(10..11).is_none());
     /// ```
+    #[inline(always)]
     fn slices_mut<R: RangeBounds<usize>>(&mut self, range: R) -> Self::SliceMutIter<'_> {
         let a = range_start(&range);
         let b = range_end(&range, self.len());
@@ -325,6 +347,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         }
     }
 
+    #[inline(always)]
     unsafe fn get_ptr_mut(&mut self, index: usize) -> Option<*mut T> {
         if index < self.data.capacity() {
             Some(self.data.as_mut_ptr().add(index))
@@ -344,74 +367,13 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     {
         self.data.binary_search_by(f)
     }
-
-    fn try_grow(&mut self) -> Result<usize, PinnedVecGrowthError> {
-        match self.len() {
-            len if len == self.capacity() => {
-                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned)
-            }
-            _ => Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
-        }
-    }
-
-    unsafe fn grow_to(
-        &mut self,
-        new_capacity: usize,
-        _: bool,
-    ) -> Result<usize, PinnedVecGrowthError> {
-        match self.capacity() {
-            current_capacity if current_capacity >= new_capacity => Ok(current_capacity),
-            _ => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-        }
-    }
-
-    fn grow_and_initialize<F>(
-        &mut self,
-        new_min_len: usize,
-        f: F,
-    ) -> Result<usize, PinnedVecGrowthError>
-    where
-        F: Fn() -> T,
-        Self: Sized,
-    {
-        let (prior_len, capacity) = (self.len(), self.capacity());
-        match new_min_len.cmp(&capacity) {
-            Ordering::Greater => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-            _ => {
-                for _ in prior_len..capacity {
-                    self.data.push(f());
-                }
-                debug_assert_eq!(self.capacity(), capacity);
-                debug_assert_eq!(self.len(), capacity);
-                Ok(capacity)
-            }
-        }
-    }
-
-    #[inline(always)]
-    unsafe fn concurrently_grow_to(
-        &mut self,
-        new_capacity: usize,
-        zero_memory: bool,
-    ) -> Result<usize, PinnedVecGrowthError> {
-        self.grow_to(new_capacity, zero_memory)
-    }
-
-    fn try_reserve_maximum_concurrent_capacity(
-        &mut self,
-        new_maximum_capacity: usize,
-    ) -> Result<usize, String> {
-        match self.capacity().cmp(&new_maximum_capacity) {
-            Ordering::Less => Err("FixedVec cannot grow beyond its original capacity.".into()),
-            _ => Ok(self.capacity()),
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
     use orx_pinned_vec::*;
+    use orx_pseudo_default::PseudoDefault;
 
     #[test]
     fn pinned_vec_exact_capacity() {
@@ -922,97 +884,9 @@ mod tests {
     }
 
     #[test]
-    fn try_grow_and_grow_to() {
-        fn test(mut vec: FixedVec<Num>) {
-            for i in 0..42 {
-                assert_eq!(
-                    Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
-                    vec.try_grow()
-                );
-                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1, true) });
-                assert_eq!(Ok(vec.capacity()), unsafe {
-                    vec.concurrently_grow_to(1, false)
-                });
-                assert_eq!(
-                    Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                    unsafe { vec.grow_to(1001, false) }
-                );
-                vec.push(Num(i));
-            }
-            for i in 0..42 {
-                assert_eq!(
-                    Err(PinnedVecGrowthError::CanOnlyGrowWhenVecIsAtCapacity),
-                    vec.try_grow()
-                );
-                assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1, false) });
-                assert_eq!(
-                    Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                    unsafe { vec.grow_to(1001, true) }
-                );
-                assert_eq!(
-                    Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                    unsafe { vec.concurrently_grow_to(1001, true) }
-                );
-                vec.insert(i, Num(100 + i));
-            }
-
-            assert_eq!(42 * 2, vec.len());
-
-            let capacity = vec.capacity();
-            for i in vec.len()..capacity {
-                vec.push(Num(i));
-            }
-
-            assert_eq!(capacity, vec.len());
-
-            assert_eq!(
-                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                vec.try_grow()
-            );
-            assert_eq!(Ok(vec.capacity()), unsafe { vec.grow_to(1, false) });
-            assert_eq!(
-                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                unsafe { vec.grow_to(1001, true) }
-            );
-            assert_eq!(Ok(vec.capacity()), unsafe {
-                vec.concurrently_grow_to(1, true)
-            });
-            assert_eq!(
-                Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
-                unsafe { vec.concurrently_grow_to(1001, false) }
-            );
-
-            assert_eq!(capacity, vec.len());
-        }
-
-        test(FixedVec::new(84));
-        test(FixedVec::new(1000));
-    }
-
-    #[test]
-    fn try_reserve_maximum_concurrent_capacity() {
-        let mut vec: FixedVec<String> = FixedVec::new(42);
-
-        assert_eq!(vec.try_reserve_maximum_concurrent_capacity(42), Ok(42));
-        assert_eq!(vec.try_reserve_maximum_concurrent_capacity(7), Ok(42));
-        assert_eq!(
-            vec.try_reserve_maximum_concurrent_capacity(43),
-            Err("FixedVec cannot grow beyond its original capacity.".to_string())
-        );
-    }
-
-    #[test]
-    fn grow_and_initialize() {
-        let mut vec: FixedVec<String> = FixedVec::new(42);
-
-        let result = vec.grow_and_initialize(30, || String::from("x"));
-        assert_eq!(result, Ok(42));
-
-        assert_eq!(vec.len(), 42);
-        assert_eq!(vec.capacity(), 42);
-        assert_eq!(vec.as_slice(), vec![String::from("x"); 42]);
-
-        let result = vec.grow_and_initialize(43, || Default::default());
-        assert!(result.is_err());
+    fn pseudo_default() {
+        let vec = FixedVec::<String>::pseudo_default();
+        assert_eq!(0, vec.capacity());
+        assert_eq!(0, vec.len());
     }
 }

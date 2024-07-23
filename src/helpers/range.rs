@@ -1,5 +1,6 @@
 use std::ops::RangeBounds;
 
+#[inline]
 pub(crate) fn range_start<R: RangeBounds<usize>>(range: &R) -> usize {
     match range.start_bound() {
         std::ops::Bound::Excluded(x) => x + 1,
@@ -7,6 +8,7 @@ pub(crate) fn range_start<R: RangeBounds<usize>>(range: &R) -> usize {
         std::ops::Bound::Unbounded => 0,
     }
 }
+#[inline]
 pub(crate) fn range_end<R: RangeBounds<usize>>(range: &R, vec_len: usize) -> usize {
     match range.end_bound() {
         std::ops::Bound::Excluded(x) => *x,
