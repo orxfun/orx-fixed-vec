@@ -3,13 +3,21 @@ use crate::{
     FixedVec,
 };
 use orx_pinned_vec::{ConcurrentPinnedVec, PinnedVecGrowthError};
-use std::cmp::Ordering;
+use std::{cmp::Ordering, fmt::Debug};
 
 /// Concurrent wrapper ([`orx_pinned_vec::ConcurrentPinnedVec`]) for the `FixedVec`.
 pub struct ConcurrentFixedVec<T> {
     data: Vec<T>,
     ptr: *mut T,
     fixed_capacity: usize,
+}
+
+impl<T> Debug for ConcurrentFixedVec<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ConcurrentFixedVec")
+            .field("fixed_capacity", &self.fixed_capacity)
+            .finish()
+    }
 }
 
 impl<T> From<FixedVec<T>> for ConcurrentFixedVec<T> {
