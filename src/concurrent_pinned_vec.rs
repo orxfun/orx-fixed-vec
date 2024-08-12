@@ -79,7 +79,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         let b = range_end(&range, self.fixed_capacity);
 
         match b.saturating_sub(a) {
-            0 => Some(&mut []),
+            0 => Some(&[]),
             _ => match (a.cmp(&self.fixed_capacity), b.cmp(&self.fixed_capacity)) {
                 (Ordering::Equal | Ordering::Greater, _) => None,
                 (_, Ordering::Greater) => None,
