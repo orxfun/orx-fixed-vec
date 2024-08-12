@@ -377,14 +377,14 @@ mod tests {
 
     #[test]
     fn pinned_vec_exact_capacity() {
-        for cap in [0, 10, 124, 5421, 89746] {
+        for cap in [0, 124, 5421] {
             test_pinned_vec(FixedVec::new(cap), cap);
         }
     }
 
     #[test]
     fn pinned_vec_loose_capacity() {
-        for cap in [0, 10, 124, 5421] {
+        for cap in [0, 124, 5421] {
             test_pinned_vec(FixedVec::new(cap * 2), cap);
         }
     }

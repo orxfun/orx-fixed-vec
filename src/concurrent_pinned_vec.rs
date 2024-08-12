@@ -50,10 +50,45 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         self.fixed_capacity
     }
 
-    fn grow_to(&self, new_capacity: usize) -> Result<usize, orx_pinned_vec::PinnedVecGrowthError> {
+    fn grow_to(&self, new_capacity: usize) -> Result<usize, PinnedVecGrowthError> {
         match new_capacity <= self.fixed_capacity {
             true => Ok(self.fixed_capacity),
             false => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+        }
+    }
+
+    fn grow_to_and_fill_with<F>(
+        &self,
+        new_capacity: usize,
+        _: F,
+    ) -> Result<usize, PinnedVecGrowthError>
+    where
+        F: Fn() -> T,
+    {
+        match new_capacity <= self.fixed_capacity {
+            true => Ok(self.fixed_capacity),
+            false => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+        }
+    }
+
+    fn slices<R: std::ops::RangeBounds<usize>>(
+        &self,
+        range: R,
+    ) -> <Self::P as orx_pinned_vec::PinnedVec<T>>::SliceIter<'_> {
+        let a = range_start(&range);
+        let b = range_end(&range, self.fixed_capacity);
+
+        match b.saturating_sub(a) {
+            0 => Some(&mut []),
+            _ => match (a.cmp(&self.fixed_capacity), b.cmp(&self.fixed_capacity)) {
+                (Ordering::Equal | Ordering::Greater, _) => None,
+                (_, Ordering::Greater) => None,
+                _ => {
+                    let p = unsafe { self.ptr.add(a) };
+                    let slice = unsafe { std::slice::from_raw_parts(p, b - a) };
+                    Some(slice)
+                }
+            },
         }
     }
 
