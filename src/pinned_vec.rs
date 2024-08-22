@@ -367,6 +367,28 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     {
         self.data.binary_search_by(f)
     }
+
+    fn sort(&mut self)
+    where
+        T: Ord,
+    {
+        self.data.sort();
+    }
+
+    fn sort_by<F>(&mut self, compare: F)
+    where
+        F: FnMut(&T, &T) -> Ordering,
+    {
+        self.data.sort_by(compare)
+    }
+
+    fn sort_by_key<K, F>(&mut self, f: F)
+    where
+        F: FnMut(&T) -> K,
+        K: Ord,
+    {
+        self.data.sort_by_key(f)
+    }
 }
 
 #[cfg(test)]
