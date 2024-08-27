@@ -128,8 +128,8 @@ impl<T> FixedVec<T> {
 }
 
 impl<T> From<Vec<T>> for FixedVec<T> {
-    fn from(value: Vec<T>) -> Self {
-        Self { data: value }
+    fn from(data: Vec<T>) -> Self {
+        Self { data }
     }
 }
 

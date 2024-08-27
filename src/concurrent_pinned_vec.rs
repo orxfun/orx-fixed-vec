@@ -3,19 +3,19 @@ use crate::{
     FixedVec,
 };
 use orx_pinned_vec::{ConcurrentPinnedVec, PinnedVecGrowthError};
-use std::{cmp::Ordering, fmt::Debug};
+use std::{cell::UnsafeCell, cmp::Ordering, fmt::Debug};
 
 /// Concurrent wrapper ([`orx_pinned_vec::ConcurrentPinnedVec`]) for the `FixedVec`.
 pub struct ConcurrentFixedVec<T> {
     data: Vec<T>,
-    ptr: *mut T,
-    fixed_capacity: usize,
+    ptr: *const T,
+    current_capacity: UnsafeCell<usize>,
 }
 
 impl<T> Debug for ConcurrentFixedVec<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ConcurrentFixedVec")
-            .field("fixed_capacity", &self.fixed_capacity)
+            .field("fixed_capacity", &self.current_capacity)
             .finish()
     }
 }
@@ -23,13 +23,13 @@ impl<T> Debug for ConcurrentFixedVec<T> {
 impl<T> From<FixedVec<T>> for ConcurrentFixedVec<T> {
     fn from(value: FixedVec<T>) -> Self {
         let mut data = value.data;
-        let fixed_capacity = data.capacity();
-        unsafe { data.set_len(fixed_capacity) };
+        let current_capacity = data.capacity();
+        unsafe { data.set_len(current_capacity) };
         let ptr = data.as_mut_ptr();
         Self {
             data,
             ptr,
-            fixed_capacity,
+            current_capacity: current_capacity.into(),
         }
     }
 }
@@ -42,32 +42,76 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         self.data.into()
     }
 
+    unsafe fn clone_with_len(&self, len: usize) -> Self
+    where
+        T: Clone,
+    {
+        assert!(len <= self.capacity());
+        let mut clone = Vec::with_capacity(self.capacity());
+        for i in 0..len {
+            clone.push(self.data[i].clone());
+        }
+        FixedVec::from(clone).into()
+    }
+
     fn capacity(&self) -> usize {
-        self.fixed_capacity
+        let x = self.current_capacity.get();
+        unsafe { *x }
     }
 
     fn max_capacity(&self) -> usize {
-        self.fixed_capacity
+        self.data.capacity()
     }
 
     fn grow_to(&self, new_capacity: usize) -> Result<usize, PinnedVecGrowthError> {
-        match new_capacity <= self.fixed_capacity {
-            true => Ok(self.fixed_capacity),
-            false => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+        match new_capacity <= self.capacity() {
+            true => Ok(self.capacity()),
+            false => match new_capacity <= self.max_capacity() {
+                true => {
+                    let c = self.current_capacity.get();
+                    unsafe { *c = self.max_capacity() };
+                    Ok(self.capacity())
+                }
+                false => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+            },
         }
     }
 
     fn grow_to_and_fill_with<F>(
         &self,
         new_capacity: usize,
-        _: F,
+        fill_with: F,
     ) -> Result<usize, PinnedVecGrowthError>
     where
         F: Fn() -> T,
     {
-        match new_capacity <= self.fixed_capacity {
-            true => Ok(self.fixed_capacity),
-            false => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+        let current_capacity = self.capacity();
+        match new_capacity <= current_capacity {
+            true => Ok(current_capacity),
+            false => match new_capacity <= self.max_capacity() {
+                true => {
+                    let c = self.current_capacity.get();
+                    unsafe { *c = self.max_capacity() };
+
+                    let new_capacity = self.capacity();
+
+                    for i in current_capacity..new_capacity {
+                        unsafe { *self.get_ptr_mut(i) = fill_with() };
+                    }
+
+                    Ok(new_capacity)
+                }
+                false => Err(PinnedVecGrowthError::FailedToGrowWhileKeepingElementsPinned),
+            },
+        }
+    }
+
+    fn fill_with<F>(&self, range: std::ops::Range<usize>, fill_with: F)
+    where
+        F: Fn() -> T,
+    {
+        for i in range {
+            unsafe { self.get_ptr_mut(i).write(fill_with()) };
         }
     }
 
@@ -76,11 +120,11 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         range: R,
     ) -> <Self::P as orx_pinned_vec::PinnedVec<T>>::SliceIter<'_> {
         let a = range_start(&range);
-        let b = range_end(&range, self.fixed_capacity);
+        let b = range_end(&range, self.capacity());
 
         match b.saturating_sub(a) {
             0 => Some(&[]),
-            _ => match (a.cmp(&self.fixed_capacity), b.cmp(&self.fixed_capacity)) {
+            _ => match (a.cmp(&self.capacity()), b.cmp(&self.capacity())) {
                 (Ordering::Equal | Ordering::Greater, _) => None,
                 (_, Ordering::Greater) => None,
                 _ => {
@@ -97,16 +141,16 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         range: R,
     ) -> <Self::P as orx_pinned_vec::PinnedVec<T>>::SliceMutIter<'_> {
         let a = range_start(&range);
-        let b = range_end(&range, self.fixed_capacity);
+        let b = range_end(&range, self.capacity());
 
         match b.saturating_sub(a) {
             0 => Some(&mut []),
-            _ => match (a.cmp(&self.fixed_capacity), b.cmp(&self.fixed_capacity)) {
+            _ => match (a.cmp(&self.capacity()), b.cmp(&self.capacity())) {
                 (Ordering::Equal | Ordering::Greater, _) => None,
                 (_, Ordering::Greater) => None,
                 _ => {
                     let p = self.ptr.add(a);
-                    let slice = unsafe { std::slice::from_raw_parts_mut(p, b - a) };
+                    let slice = unsafe { std::slice::from_raw_parts_mut(p as *mut T, b - a) };
                     Some(slice)
                 }
             },
@@ -136,7 +180,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     }
 
     unsafe fn get(&self, index: usize) -> Option<&T> {
-        match index < self.fixed_capacity {
+        match index < self.capacity() {
             true => Some(&*self.ptr.add(index)),
             false => None,
         }
@@ -150,8 +194,8 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     }
 
     unsafe fn get_ptr_mut(&self, index: usize) -> *mut T {
-        assert!(index < self.fixed_capacity);
-        self.ptr.add(index)
+        assert!(index < self.capacity());
+        self.ptr.add(index) as *mut T
     }
 
     unsafe fn reserve_maximum_concurrent_capacity(
@@ -159,11 +203,13 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         _: usize,
         new_maximum_capacity: usize,
     ) -> usize {
-        let additional = new_maximum_capacity.saturating_sub(self.fixed_capacity);
+        let additional = new_maximum_capacity.saturating_sub(self.capacity());
         self.data.reserve(additional);
-        self.fixed_capacity = self.data.capacity();
-        self.data.set_len(self.fixed_capacity);
-        self.fixed_capacity
+
+        let new_capacity = self.data.capacity();
+        self.current_capacity = new_capacity.into();
+
+        new_capacity
     }
 
     unsafe fn clear(&mut self, prior_len: usize) {
