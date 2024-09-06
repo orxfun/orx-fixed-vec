@@ -13,6 +13,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
+    use alloc::vec::Vec;
 
     #[test]
     fn eq() {

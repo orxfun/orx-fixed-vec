@@ -1,4 +1,5 @@
 use crate::FixedVec;
+use alloc::vec::Vec;
 
 impl<T> FromIterator<T> for FixedVec<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
@@ -10,6 +11,7 @@ impl<T> FromIterator<T> for FixedVec<T> {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
+    use alloc::vec::Vec;
 
     #[test]
     fn from_iter() {

@@ -1,8 +1,6 @@
 use crate::FixedVec;
-use std::{
-    ops::{Index, IndexMut},
-    slice::SliceIndex,
-};
+use core::ops::{Index, IndexMut};
+use core::slice::SliceIndex;
 
 impl<T, I> Index<I> for FixedVec<T>
 where

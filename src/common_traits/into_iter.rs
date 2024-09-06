@@ -1,5 +1,5 @@
 use crate::FixedVec;
-use std::vec::IntoIter;
+use alloc::vec::IntoIter;
 
 impl<T> IntoIterator for FixedVec<T> {
     type Item = T;
@@ -13,6 +13,7 @@ impl<T> IntoIterator for FixedVec<T> {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
+    use alloc::vec::Vec;
 
     #[test]
     fn into_iter() {
