@@ -1,4 +1,5 @@
 use crate::FixedVec;
+use alloc::vec::Vec;
 
 impl<T> Clone for FixedVec<T>
 where

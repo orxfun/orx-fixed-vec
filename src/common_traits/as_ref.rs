@@ -1,5 +1,5 @@
 use crate::FixedVec;
-use std::ops::Deref;
+use core::ops::Deref;
 
 impl<T> AsRef<[T]> for FixedVec<T> {
     fn as_ref(&self) -> &[T] {
@@ -23,7 +23,7 @@ impl<T> Deref for FixedVec<T> {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
-    use std::ops::Deref;
+    use core::ops::Deref;
 
     #[test]
     fn as_ref() {

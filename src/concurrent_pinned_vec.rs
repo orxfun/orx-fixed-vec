@@ -2,8 +2,10 @@ use crate::{
     helpers::range::{range_end, range_start},
     FixedVec,
 };
+use alloc::vec::Vec;
+use core::cmp::Ordering;
+use core::fmt::Debug;
 use orx_pinned_vec::{ConcurrentPinnedVec, PinnedVecGrowthError};
-use std::{cmp::Ordering, fmt::Debug};
 
 /// Concurrent wrapper ([`orx_pinned_vec::ConcurrentPinnedVec`]) for the `FixedVec`.
 pub struct ConcurrentFixedVec<T> {
@@ -13,7 +15,7 @@ pub struct ConcurrentFixedVec<T> {
 }
 
 impl<T> Debug for ConcurrentFixedVec<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("ConcurrentFixedVec")
             .field("fixed_capacity", &self.current_capacity)
             .finish()
@@ -83,7 +85,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         }
     }
 
-    fn fill_with<F>(&self, range: std::ops::Range<usize>, fill_with: F)
+    fn fill_with<F>(&self, range: core::ops::Range<usize>, fill_with: F)
     where
         F: Fn() -> T,
     {
@@ -92,7 +94,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         }
     }
 
-    fn slices<R: std::ops::RangeBounds<usize>>(
+    fn slices<R: core::ops::RangeBounds<usize>>(
         &self,
         range: R,
     ) -> <Self::P as orx_pinned_vec::PinnedVec<T>>::SliceIter<'_> {
@@ -106,14 +108,14 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
                 (_, Ordering::Greater) => None,
                 _ => {
                     let p = unsafe { self.ptr.add(a) };
-                    let slice = unsafe { std::slice::from_raw_parts(p, b - a) };
+                    let slice = unsafe { core::slice::from_raw_parts(p, b - a) };
                     Some(slice)
                 }
             },
         }
     }
 
-    unsafe fn slices_mut<R: std::ops::RangeBounds<usize>>(
+    unsafe fn slices_mut<R: core::ops::RangeBounds<usize>>(
         &self,
         range: R,
     ) -> <Self::P as orx_pinned_vec::PinnedVec<T>>::SliceMutIter<'_> {
@@ -127,7 +129,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
                 (_, Ordering::Greater) => None,
                 _ => {
                     let p = self.ptr.add(a);
-                    let slice = unsafe { std::slice::from_raw_parts_mut(p as *mut T, b - a) };
+                    let slice = unsafe { core::slice::from_raw_parts_mut(p as *mut T, b - a) };
                     Some(slice)
                 }
             },
@@ -139,7 +141,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         T: 'a,
     {
         let p = self.data.as_ptr();
-        let slice = std::slice::from_raw_parts(p, len);
+        let slice = core::slice::from_raw_parts(p, len);
         slice.iter()
     }
 
@@ -148,7 +150,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         T: 'a,
     {
         let p = self.data.as_mut_ptr();
-        let slice = std::slice::from_raw_parts_mut(p, len);
+        let slice = core::slice::from_raw_parts_mut(p, len);
         slice.iter_mut()
     }
 

@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 /// A fixed vector, `FixedVec`, is a vector with a strict predetermined capacity
 /// (see [`SplitVec`](https://crates.io/crates/orx-split-vec) for dynamic capacity version).
 ///
@@ -144,6 +146,9 @@ const ERR_MSG_OUT_OF_ROOM: &str =
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+    use alloc::vec::Vec;
+
     use crate::prelude::*;
 
     #[test]

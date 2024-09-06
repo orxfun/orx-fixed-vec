@@ -1,11 +1,11 @@
 use crate::helpers::range::{range_end, range_start};
 use crate::FixedVec;
+use core::cmp::Ordering;
+use core::iter::Rev;
+use core::ops::RangeBounds;
 use orx_pinned_vec::utils::slice;
 use orx_pinned_vec::{CapacityState, PinnedVec};
 use orx_pseudo_default::PseudoDefault;
-use std::cmp::Ordering;
-use std::iter::Rev;
-use std::ops::RangeBounds;
 
 impl<T> PseudoDefault for FixedVec<T> {
     fn pseudo_default() -> Self {
@@ -16,10 +16,10 @@ impl<T> PseudoDefault for FixedVec<T> {
 }
 
 impl<T> PinnedVec<T> for FixedVec<T> {
-    type Iter<'a> = std::slice::Iter<'a, T> where T: 'a, Self: 'a;
-    type IterMut<'a> = std::slice::IterMut<'a, T> where T: 'a, Self: 'a;
-    type IterRev<'a> = Rev<std::slice::Iter<'a, T>> where T: 'a, Self: 'a;
-    type IterMutRev<'a> = Rev<std::slice::IterMut<'a, T>> where T: 'a, Self: 'a;
+    type Iter<'a> = core::slice::Iter<'a, T> where T: 'a, Self: 'a;
+    type IterMut<'a> = core::slice::IterMut<'a, T> where T: 'a, Self: 'a;
+    type IterRev<'a> = Rev<core::slice::Iter<'a, T>> where T: 'a, Self: 'a;
+    type IterMutRev<'a> = Rev<core::slice::IterMut<'a, T>> where T: 'a, Self: 'a;
     type SliceIter<'a> = Option<&'a [T]> where T: 'a, Self: 'a;
     type SliceMutIter<'a> = Option<&'a mut [T]> where T: 'a, Self: 'a;
 
@@ -394,6 +394,8 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
+    use alloc::string::String;
+    use alloc::vec::Vec;
     use orx_pinned_vec::*;
     use orx_pseudo_default::PseudoDefault;
 
@@ -421,7 +423,7 @@ mod tests {
     #[test]
     fn index_of_and_contains() {
         fn test(mut vec: FixedVec<usize>) {
-            let mut another_vec = vec![];
+            let mut another_vec = Vec::new();
             for i in 0..42 {
                 vec.push(i);
                 another_vec.push(i);
@@ -756,7 +758,7 @@ mod tests {
         }
 
         let slice = vec.slices(0..vec.len());
-        let mut combined = vec![];
+        let mut combined = Vec::new();
         for s in slice {
             combined.extend_from_slice(s);
         }
@@ -768,7 +770,7 @@ mod tests {
         let begin = vec.len() / 4;
         let end = 3 * vec.len() / 4;
         let slice = vec.slices(begin..end);
-        let mut combined = vec![];
+        let mut combined = Vec::new();
         for s in slice {
             combined.extend_from_slice(s);
         }
@@ -790,7 +792,7 @@ mod tests {
         }
 
         let slice = vec.slices_mut(0..vec.len());
-        let mut combined = vec![];
+        let mut combined = Vec::new();
         for s in slice {
             combined.extend_from_slice(s);
         }
@@ -802,7 +804,7 @@ mod tests {
         let begin = vec.len() / 4;
         let end = 3 * vec.len() / 4;
         let slice = vec.slices_mut(begin..end);
-        let mut combined = vec![];
+        let mut combined = Vec::new();
         for s in slice {
             combined.extend_from_slice(s);
         }

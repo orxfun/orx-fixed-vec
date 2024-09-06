@@ -121,6 +121,9 @@
     clippy::missing_panics_doc,
     clippy::todo
 )]
+#![no_std]
+
+extern crate alloc;
 
 mod common_traits;
 mod concurrent_pinned_vec;

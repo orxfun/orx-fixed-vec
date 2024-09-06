@@ -1,5 +1,5 @@
+use core::cmp::Ordering;
 use orx_fixed_vec::*;
-use std::cmp::Ordering;
 
 #[test]
 fn sort() {
