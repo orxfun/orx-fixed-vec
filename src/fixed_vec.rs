@@ -10,10 +10,10 @@ use alloc::vec::Vec;
 ///     * `FixedVec<T>` implements [`PinnedVec<T>`](https://crates.io/crates/orx-pinned-vec) for any `T`;
 ///     * `FixedVec<T>` implements `PinnedVecSimple<T>` for `T: NotSelfRefVecItem`;
 ///     * Memory location of an item added to the fixed vector will never change
-/// unless the vector is dropped or cleared.
+///       unless the vector is dropped or cleared.
 ///     * This allows the fixed vec to be converted into an [`ImpVec`](https://crates.io/crates/orx-imp-vec)
-/// to enable immutable-push operations which allows for
-/// convenient, efficient and safe implementations of self-referencing data structures.
+///       to enable immutable-push operations which allows for
+///       convenient, efficient and safe implementations of self-referencing data structures.
 pub struct FixedVec<T> {
     pub(crate) data: Vec<T>,
 }
