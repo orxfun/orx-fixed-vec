@@ -70,6 +70,34 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         slice::index_of(&self.data, element)
     }
 
+    fn index_of_ptr(&self, element_ptr: *const T) -> Option<usize> {
+        slice::index_of_ptr(&self.data, element_ptr)
+    }
+
+    fn push_get_ptr(&mut self, value: T) -> *const T {
+        let idx = self.data.len();
+        self.data.push(value);
+        unsafe { self.data.as_ptr().add(idx) }
+    }
+
+    unsafe fn iter_ptr<'v, 'i>(&'v self) -> impl Iterator<Item = *const T> + 'i
+    where
+        T: 'i,
+    {
+        let ptr = self.data.as_ptr();
+        (0..self.data.len()).map(move |i| unsafe { ptr.add(i) })
+    }
+
+    unsafe fn iter_ptr_rev<'v, 'i>(&'v self) -> impl Iterator<Item = *const T> + 'i
+    where
+        T: 'i,
+    {
+        let ptr = self.data.as_ptr();
+        (0..self.data.len())
+            .rev()
+            .map(move |i| unsafe { ptr.add(i) })
+    }
+
     /// Returns whether or not the `element` with the given reference belongs to the vector.
     /// This method has *O(1)* time complexity.
     ///
@@ -114,7 +142,24 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     /// ```
     #[inline(always)]
     fn contains_reference(&self, element: &T) -> bool {
-        slice::contains_reference(&self.data, element)
+        slice::contains_reference(self.data.as_slice(), element)
+    }
+
+    /// Returns whether or not the `element` with the given reference belongs to the vector.
+    /// This method has *O(1)* time complexity.
+    ///
+    /// Note that `T: Eq` is not required; memory pointer is used.
+    ///
+    /// # Safety
+    ///
+    /// Since `FixedVec` implements `PinnedVec`, the underlying memory
+    /// of the vector stays pinned; i.e., is not carried to different memory
+    /// locations.
+    /// Therefore, it is possible and safe to compare an element's reference
+    /// to find its position in the vector.
+    #[inline(always)]
+    fn contains_ptr(&self, element_ptr: *const T) -> bool {
+        slice::contains_ptr(self.data.as_slice(), element_ptr)
     }
 
     fn clear(&mut self) {
@@ -348,12 +393,13 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     }
 
     #[inline(always)]
-    unsafe fn get_ptr_mut(&mut self, index: usize) -> Option<*mut T> {
-        if index < self.data.capacity() {
-            Some(self.data.as_mut_ptr().add(index))
-        } else {
-            None
-        }
+    fn get_ptr(&self, index: usize) -> Option<*const T> {
+        (index < self.data.capacity()).then(|| unsafe { self.data.as_ptr().add(index) })
+    }
+
+    #[inline(always)]
+    fn get_ptr_mut(&mut self, index: usize) -> Option<*mut T> {
+        (index < self.data.capacity()).then(|| unsafe { self.data.as_mut_ptr().add(index) })
     }
 
     #[inline(always)]
