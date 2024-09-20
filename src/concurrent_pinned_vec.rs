@@ -145,6 +145,20 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         slice.iter()
     }
 
+    unsafe fn iter_over_range<'a, R: core::ops::RangeBounds<usize>>(
+        &'a self,
+        range: R,
+    ) -> impl Iterator<Item = &'a T> + 'a
+    where
+        T: 'a,
+    {
+        let [a, b] = orx_pinned_vec::utils::slice::vec_range_limits(&range, None);
+        let len = b - a;
+        let p = self.data.as_ptr().add(a);
+        let slice = core::slice::from_raw_parts(p, len);
+        slice.iter()
+    }
+
     unsafe fn iter_mut<'a>(&'a mut self, len: usize) -> impl Iterator<Item = &'a mut T> + 'a
     where
         T: 'a,
