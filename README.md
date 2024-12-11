@@ -60,8 +60,10 @@ assert_eq!(6, vec.iter().sum());
 
 assert_eq!(vec.clone(), vec);
 
-let std_vec: Vec<_> = vec.into();
-assert_eq!(&std_vec, &[0, 1, 2, 3]);
+assert_eq!(&vec, &[0, 1, 2, 3]);
+
+// allows zero-cost conversion into and from std Vec
+let _std_vec: Vec<_> = vec.into();
 ```
 
 ### C.2. Pinned Elements
