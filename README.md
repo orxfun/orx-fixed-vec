@@ -3,34 +3,29 @@
 [![orx-fixed-vec crate](https://img.shields.io/crates/v/orx-fixed-vec.svg)](https://crates.io/crates/orx-fixed-vec)
 [![orx-fixed-vec documentation](https://docs.rs/orx-fixed-vec/badge.svg)](https://docs.rs/orx-fixed-vec)
 
-An efficient constant access time vector with fixed capacity and pinned elements.
+An efficient fixed capacity vector with pinned element guarantees.
 
-## A. Motivation
+A **FixedVec** implements [`PinnedVec`](https://crates.io/crates/orx-pinned-vec); you may read the detailed information about [pinned element guarantees](https://docs.rs/orx-pinned-vec/latest/orx_pinned_vec/#pinned-elements-guarantees) and why they are useful in the [motivation-and-examples](https://docs.rs/orx-pinned-vec/latest/orx_pinned_vec/#motivation--examples) section. In brief, a pinned vector does not allow implicit changes in memory locations of its elements; such as moving the entire vector to another memory location due to additional capacity requirement.
 
-There are various situations where pinned elements are critical.
+## Features
 
-* It is critical in enabling **efficient, convenient and safe self-referential collections** with thin references, see [`SelfRefCol`](https://crates.io/crates/orx-selfref-col) for details, and its special cases such as [`LinkedList`](https://crates.io/crates/orx-linked-list).
-* It is important for **concurrent** programs as it eliminates safety concerns related with elements implicitly carried to different memory locations. This helps reducing and dealing with the complexity of concurrency, and leads to efficient concurrent data structures. See [`ConcurrentIter`](https://crates.io/crates/orx-concurrent-iter), [`ConcurrentBag`](https://crates.io/crates/orx-concurrent-bag) or [`ConcurrentOrderedBag`](https://crates.io/crates/orx-concurrent-ordered-bag) for such concurrent data structures which are conveniently built on the pinned element guarantees of pinned vectors.
-* It is essential in allowing an **immutable push** vector; i.e., [`ImpVec`](https://crates.io/crates/orx-imp-vec). This is a very useful operation when the desired collection is a bag or a container of things, rather than having a collective meaning. In such cases, `ImpVec` allows avoiding certain borrow checker complexities, heap allocations and wide pointers such as `Box` or `Rc` or etc.
+A fixed vec is simply a wrapper around the standard vector with the following two key differences:
+* It is always created with an initial fixed capacity which cannot implicitly change.
+* If we add more elements than the fixed capacity, the vector panics.
 
-## B. Comparison with `SplitVec`
+This leads to the following properties:
+* Its implementation is uninteresting as it does nothing but exposes standard vector methods.
+* For the very same reason, it is as performant as the standard vector; details can be found at the [benches](https://github.com/orxfun/orx-fixed-vec/blob/main/benches) folder.
+* It satisfies the pinned element guarantees, and hence, it implements `PinnedVec` unlike the standard vector.
 
-[`SplitVec`](https://crates.io/crates/orx-split-vec) is another [`PinnedVec`](https://crates.io/crates/orx-pinned-vec) implementation aiming the same goal but with different features. You may see the comparison in the table below.
+Using a fixed capacity vector has limited use cases as this information is usually not available in situations where we use a vector. Therefore, we more frequently use the [`SplitVec`](https://crates.io/crates/orx-split-vec) as a dynamic capacity vector with pinned element guarantees. `FixedVec`, on the other hand, must be used only when we have the perfect knowledge on the upper bound of vector length.
 
-| **`FixedVec`**                                                               | **`SplitVec`**                                                                   |
-|------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| Implements `PinnedVec` => can be wrapped by an `ImpVec` or `SelfRefCol` or `ConcurrentBag`, etc. | Implements `PinnedVec` => can as well be wrapped by them.         |
-| Requires exact capacity to be known while creating.                          | Can be created with any level of prior information about required capacity.      |
-| Cannot grow beyond capacity; panics when `push` is called at capacity.       | Can grow dynamically. Further, it provides control on how it must grow. |
-| It is just a wrapper around `std::vec::Vec`; hence, has equivalent performance. | Performance-optimized built-in growth strategies also have `std::vec::Vec` equivalent performance. |
+In order to illustrate, consider an operation where we compute **n** outputs from **n** inputs; i.e., we map each element to a new element. Further, we want to collect or write the results in a new vector. In this case, we could safely use a `FixedVec` created with a capacity of **n** elements. This is exactly the parallel iterator [`Par`](https://crates.io/crates/orx-parallel) does under the hood when the length of the output is known with certainty. In other situations, `SplitVec` is used as the pinned vector.
 
-After the performance optimizations on the `SplitVec`, it is now comparable to `std::vec::Vec` in terms of performance. This might make `SplitVec` a dominating choice over `FixedVec`.
 
-## C. Examples
+## Examples
 
-### C.1. Usage similar to `std::vec::Vec`
-
-Most common `std::vec::Vec` operations are available in `FixedVec` with the same signature.
+FixedVec api resembles and aims to cover as much as possible the standard vector's api.
 
 ```rust
 use orx_fixed_vec::prelude::*;
@@ -66,9 +61,7 @@ assert_eq!(&vec, &[0, 1, 2, 3]);
 let _std_vec: Vec<_> = vec.into();
 ```
 
-### C.2. Pinned Elements
-
-Unless elements are removed from the vector, the memory location of an element already pushed to the `SplitVec` <ins>never</ins> changes unless explicitly changed.
+Its main difference and objective is to provide pinned element guarantees as demonstrated in the example below.
 
 ```rust
 use orx_fixed_vec::prelude::*;
@@ -103,10 +96,9 @@ assert_eq!(unsafe { *addr42 }, 42);
 // vec.push(0);
 ```
 
-## D. Benchmarks
+## Contributing
 
-Since `FixedVec` is just a wrapper around the `std::vec::Vec` with additional pinned element guarantee; it is expected to have equivalent performance. This is tested and confirmed by benchmarks that can be found at the at [benches](https://github.com/orxfun/orx-fixed-vec/blob/main/benches) folder.
-
+Contributions are welcome! If you notice an error, have a question or think something could be improved, please open an [issue](https://github.com/orxfun/orx-fixed-vec/issues/new) or create a PR.
 
 ## License
 
