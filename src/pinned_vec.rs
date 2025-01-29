@@ -3,6 +3,7 @@ use crate::FixedVec;
 use core::cmp::Ordering;
 use core::iter::Rev;
 use core::ops::RangeBounds;
+use orx_iterable::Collection;
 use orx_pinned_vec::utils::slice;
 use orx_pinned_vec::{CapacityState, PinnedVec};
 use orx_pseudo_default::PseudoDefault;
@@ -16,12 +17,26 @@ impl<T> PseudoDefault for FixedVec<T> {
 }
 
 impl<T> PinnedVec<T> for FixedVec<T> {
-    type Iter<'a> = core::slice::Iter<'a, T> where T: 'a, Self: 'a;
-    type IterMut<'a> = core::slice::IterMut<'a, T> where T: 'a, Self: 'a;
-    type IterRev<'a> = Rev<core::slice::Iter<'a, T>> where T: 'a, Self: 'a;
-    type IterMutRev<'a> = Rev<core::slice::IterMut<'a, T>> where T: 'a, Self: 'a;
-    type SliceIter<'a> = Option<&'a [T]> where T: 'a, Self: 'a;
-    type SliceMutIter<'a> = Option<&'a mut [T]> where T: 'a, Self: 'a;
+    type IterRev<'a>
+        = Rev<core::slice::Iter<'a, T>>
+    where
+        T: 'a,
+        Self: 'a;
+    type IterMutRev<'a>
+        = Rev<core::slice::IterMut<'a, T>>
+    where
+        T: 'a,
+        Self: 'a;
+    type SliceIter<'a>
+        = Option<&'a [T]>
+    where
+        T: 'a,
+        Self: 'a;
+    type SliceMutIter<'a>
+        = Option<&'a mut [T]>
+    where
+        T: 'a,
+        Self: 'a;
 
     /// Returns the index of the `element` with the given reference.
     /// This method has *O(1)* time complexity.
@@ -284,16 +299,6 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     #[inline(always)]
     fn truncate(&mut self, len: usize) {
         self.data.truncate(len)
-    }
-
-    #[inline(always)]
-    fn iter(&self) -> Self::Iter<'_> {
-        self.data.iter()
-    }
-
-    #[inline(always)]
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        self.data.iter_mut()
     }
 
     #[inline(always)]

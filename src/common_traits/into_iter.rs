@@ -10,6 +10,24 @@ impl<T> IntoIterator for FixedVec<T> {
     }
 }
 
+impl<'a, T> IntoIterator for &'a FixedVec<T> {
+    type Item = &'a T;
+    type IntoIter = core::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut FixedVec<T> {
+    type Item = &'a mut T;
+    type IntoIter = core::slice::IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.iter_mut()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
