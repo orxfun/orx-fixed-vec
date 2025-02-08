@@ -1,6 +1,7 @@
 # orx-fixed-vec
 
 [![orx-fixed-vec crate](https://img.shields.io/crates/v/orx-fixed-vec.svg)](https://crates.io/crates/orx-fixed-vec)
+[![orx-fixed-vec crate](https://img.shields.io/crates/d/orx-fixed-vec.svg)](https://crates.io/crates/orx-fixed-vec)
 [![orx-fixed-vec documentation](https://docs.rs/orx-fixed-vec/badge.svg)](https://docs.rs/orx-fixed-vec)
 
 An efficient fixed capacity vector with pinned element guarantees.
