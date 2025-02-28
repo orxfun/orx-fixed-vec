@@ -22,16 +22,19 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     where
         T: 'a,
         Self: 'a;
+
     type IterMutRev<'a>
         = Rev<core::slice::IterMut<'a, T>>
     where
         T: 'a,
         Self: 'a;
+
     type SliceIter<'a>
         = Option<&'a [T]>
     where
         T: 'a,
         Self: 'a;
+
     type SliceMutIter<'a>
         = Option<&'a mut [T]>
     where
@@ -395,6 +398,38 @@ impl<T> PinnedVec<T> for FixedVec<T> {
                 _ => Some(&mut self.data[a..b]),
             },
         }
+    }
+
+    fn iter_over<'a>(
+        &'a self,
+        range: impl RangeBounds<usize>,
+    ) -> impl ExactSizeIterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        use core::cmp::{max, min};
+
+        let len = PinnedVec::len(self);
+        let a = min(len, range_start(&range));
+        let b = max(a, min(len, range_end(&range, len)));
+
+        self.data[a..b].iter()
+    }
+
+    fn iter_mut_over<'a>(
+        &'a mut self,
+        range: impl RangeBounds<usize>,
+    ) -> impl ExactSizeIterator<Item = &'a mut T>
+    where
+        T: 'a,
+    {
+        use core::cmp::{max, min};
+
+        let len = PinnedVec::len(self);
+        let a = min(len, range_start(&range));
+        let b = max(a, min(len, range_end(&range, len)));
+
+        self.data[a..b].iter_mut()
     }
 
     #[inline(always)]

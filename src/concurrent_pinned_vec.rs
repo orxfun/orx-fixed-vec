@@ -39,6 +39,18 @@ impl<T> From<FixedVec<T>> for ConcurrentFixedVec<T> {
 impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     type P = FixedVec<T>;
 
+    type SliceIter<'a>
+        = Option<&'a [T]>
+    where
+        T: 'a,
+        Self: 'a;
+
+    type SliceMutIter<'a>
+        = Option<&'a mut [T]>
+    where
+        T: 'a,
+        Self: 'a;
+
     unsafe fn into_inner(mut self, len: usize) -> Self::P {
         unsafe { self.data.set_len(len) };
         self.data.into()
