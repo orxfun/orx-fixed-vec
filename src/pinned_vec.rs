@@ -1,5 +1,5 @@
-use crate::helpers::range::{range_end, range_start};
 use crate::FixedVec;
+use crate::helpers::range::{range_end, range_start};
 use core::cmp::Ordering;
 use core::iter::Rev;
 use core::ops::RangeBounds;
@@ -222,12 +222,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &T {
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
-        self.data.get_unchecked_mut(index)
+        unsafe { self.data.get_unchecked_mut(index) }
     }
 
     #[inline(always)]
@@ -242,12 +242,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
     #[inline(always)]
     unsafe fn first_unchecked(&self) -> &T {
-        self.data.get_unchecked(0)
+        unsafe { self.data.get_unchecked(0) }
     }
 
     #[inline(always)]
     unsafe fn last_unchecked(&self) -> &T {
-        self.data.get_unchecked(self.data.len() - 1)
+        unsafe { self.data.get_unchecked(self.data.len() - 1) }
     }
 
     #[inline(always)]
@@ -444,7 +444,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
     #[inline(always)]
     unsafe fn set_len(&mut self, new_len: usize) {
-        self.data.set_len(new_len)
+        unsafe { self.data.set_len(new_len) }
     }
 
     fn binary_search_by<F>(&self, f: F) -> Result<usize, usize>
