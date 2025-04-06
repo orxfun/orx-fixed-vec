@@ -1,6 +1,6 @@
 use criterion::{
-    black_box, criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, BenchmarkId,
-    Criterion,
+    BenchmarkGroup, BenchmarkId, Criterion, black_box, criterion_group, criterion_main,
+    measurement::WallTime,
 };
 use orx_fixed_vec::prelude::*;
 
@@ -56,8 +56,8 @@ fn test_for_type<T: Default + PartialEq + std::fmt::Debug>(
         let treatment = format!("n={},elem-type=[u64;{}]", n, num_u64s);
 
         group.bench_with_input(BenchmarkId::new("std_vec", &treatment), n, |b, _| {
-            let stdvec = std_vec_with_capacity(black_box(*n), value);
-            b.iter(|| calc(black_box(add), black_box(&stdvec)))
+            let std_vec = std_vec_with_capacity(black_box(*n), value);
+            b.iter(|| calc(black_box(add), black_box(&std_vec)))
         });
 
         group.bench_with_input(BenchmarkId::new("fixed_vec", &treatment), n, |b, _| {
