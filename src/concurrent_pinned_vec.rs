@@ -1,6 +1,6 @@
 use crate::{
-    helpers::range::{range_end, range_start},
     FixedVec,
+    helpers::range::{range_end, range_start},
 };
 use alloc::vec::Vec;
 use core::cmp::Ordering;
@@ -38,6 +38,18 @@ impl<T> From<FixedVec<T>> for ConcurrentFixedVec<T> {
 
 impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     type P = FixedVec<T>;
+
+    type SliceIter<'a>
+        = Option<&'a [T]>
+    where
+        T: 'a,
+        Self: 'a;
+
+    type SliceMutIter<'a>
+        = Option<&'a mut [T]>
+    where
+        T: 'a,
+        Self: 'a;
 
     unsafe fn into_inner(mut self, len: usize) -> Self::P {
         unsafe { self.data.set_len(len) };
@@ -128,7 +140,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
                 (Ordering::Equal | Ordering::Greater, _) => None,
                 (_, Ordering::Greater) => None,
                 _ => {
-                    let p = self.ptr.add(a);
+                    let p = unsafe { self.ptr.add(a) };
                     let slice = unsafe { core::slice::from_raw_parts_mut(p as *mut T, b - a) };
                     Some(slice)
                 }
@@ -141,7 +153,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         T: 'a,
     {
         let p = self.data.as_ptr();
-        let slice = core::slice::from_raw_parts(p, len);
+        let slice = unsafe { core::slice::from_raw_parts(p, len) };
         slice.iter()
     }
 
@@ -154,8 +166,8 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     {
         let [a, b] = orx_pinned_vec::utils::slice::vec_range_limits(&range, None);
         let len = b - a;
-        let p = self.data.as_ptr().add(a);
-        let slice = core::slice::from_raw_parts(p, len);
+        let p = unsafe { self.data.as_ptr().add(a) };
+        let slice = unsafe { core::slice::from_raw_parts(p, len) };
         slice.iter()
     }
 
@@ -164,17 +176,17 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         T: 'a,
     {
         let p = self.data.as_mut_ptr();
-        let slice = core::slice::from_raw_parts_mut(p, len);
+        let slice = unsafe { core::slice::from_raw_parts_mut(p, len) };
         slice.iter_mut()
     }
 
     unsafe fn set_pinned_vec_len(&mut self, len: usize) {
-        self.data.set_len(len);
+        unsafe { self.data.set_len(len) };
     }
 
     unsafe fn get(&self, index: usize) -> Option<&T> {
         match index < self.capacity() {
-            true => Some(&*self.ptr.add(index)),
+            true => Some(unsafe { &*self.ptr.add(index) }),
             false => None,
         }
     }
@@ -188,7 +200,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
 
     unsafe fn get_ptr_mut(&self, index: usize) -> *mut T {
         assert!(index < self.capacity());
-        self.ptr.add(index) as *mut T
+        unsafe { self.ptr.add(index) as *mut T }
     }
 
     unsafe fn reserve_maximum_concurrent_capacity(
@@ -219,7 +231,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
 
         self.current_capacity = self.data.capacity();
 
-        self.data.set_len(current_len);
+        unsafe { self.data.set_len(current_len) };
 
         for _ in current_len..self.current_capacity {
             self.data.push(fill_with());
@@ -229,7 +241,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     }
 
     unsafe fn clear(&mut self, prior_len: usize) {
-        self.set_pinned_vec_len(prior_len);
+        unsafe { self.set_pinned_vec_len(prior_len) };
         self.data.clear()
     }
 }

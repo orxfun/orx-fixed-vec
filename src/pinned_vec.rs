@@ -1,5 +1,5 @@
-use crate::helpers::range::{range_end, range_start};
 use crate::FixedVec;
+use crate::helpers::range::{range_end, range_start};
 use core::cmp::Ordering;
 use core::iter::Rev;
 use core::ops::RangeBounds;
@@ -22,16 +22,19 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     where
         T: 'a,
         Self: 'a;
+
     type IterMutRev<'a>
         = Rev<core::slice::IterMut<'a, T>>
     where
         T: 'a,
         Self: 'a;
+
     type SliceIter<'a>
         = Option<&'a [T]>
     where
         T: 'a,
         Self: 'a;
+
     type SliceMutIter<'a>
         = Option<&'a mut [T]>
     where
@@ -219,12 +222,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &T {
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
-        self.data.get_unchecked_mut(index)
+        unsafe { self.data.get_unchecked_mut(index) }
     }
 
     #[inline(always)]
@@ -239,12 +242,12 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
     #[inline(always)]
     unsafe fn first_unchecked(&self) -> &T {
-        self.data.get_unchecked(0)
+        unsafe { self.data.get_unchecked(0) }
     }
 
     #[inline(always)]
     unsafe fn last_unchecked(&self) -> &T {
-        self.data.get_unchecked(self.data.len() - 1)
+        unsafe { self.data.get_unchecked(self.data.len() - 1) }
     }
 
     #[inline(always)]
@@ -397,6 +400,38 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         }
     }
 
+    fn iter_over<'a>(
+        &'a self,
+        range: impl RangeBounds<usize>,
+    ) -> impl ExactSizeIterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        use core::cmp::{max, min};
+
+        let len = PinnedVec::len(self);
+        let a = min(len, range_start(&range));
+        let b = max(a, min(len, range_end(&range, len)));
+
+        self.data[a..b].iter()
+    }
+
+    fn iter_mut_over<'a>(
+        &'a mut self,
+        range: impl RangeBounds<usize>,
+    ) -> impl ExactSizeIterator<Item = &'a mut T>
+    where
+        T: 'a,
+    {
+        use core::cmp::{max, min};
+
+        let len = PinnedVec::len(self);
+        let a = min(len, range_start(&range));
+        let b = max(a, min(len, range_end(&range, len)));
+
+        self.data[a..b].iter_mut()
+    }
+
     #[inline(always)]
     fn get_ptr(&self, index: usize) -> Option<*const T> {
         (index < self.data.capacity()).then(|| unsafe { self.data.as_ptr().add(index) })
@@ -409,7 +444,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
 
     #[inline(always)]
     unsafe fn set_len(&mut self, new_len: usize) {
-        self.data.set_len(new_len)
+        unsafe { self.data.set_len(new_len) }
     }
 
     fn binary_search_by<F>(&self, f: F) -> Result<usize, usize>
@@ -440,6 +475,10 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     {
         self.data.sort_by_key(f)
     }
+
+    fn capacity_bound(&self) -> usize {
+        usize::MAX
+    }
 }
 
 #[cfg(test)]
@@ -452,14 +491,24 @@ mod tests {
 
     #[test]
     fn pinned_vec_exact_capacity() {
-        for cap in [0, 124, 5421] {
+        #[cfg(not(miri))]
+        let capacities = [0, 124, 5421];
+        #[cfg(miri)]
+        let capacities = [0, 44];
+
+        for cap in capacities {
             test_pinned_vec(FixedVec::new(cap), cap);
         }
     }
 
     #[test]
     fn pinned_vec_loose_capacity() {
-        for cap in [0, 124, 5421] {
+        #[cfg(not(miri))]
+        let capacities = [0, 124, 5421];
+        #[cfg(miri)]
+        let capacities = [0, 44];
+
+        for cap in capacities {
             test_pinned_vec(FixedVec::new(cap * 2), cap);
         }
     }

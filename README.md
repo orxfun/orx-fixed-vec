@@ -8,6 +8,8 @@ An efficient fixed capacity vector with pinned element guarantees.
 
 A **FixedVec** implements [`PinnedVec`](https://crates.io/crates/orx-pinned-vec); you may read the detailed information about [pinned element guarantees](https://docs.rs/orx-pinned-vec/latest/orx_pinned_vec/#pinned-elements-guarantees) and why they are useful in the [motivation-and-examples](https://docs.rs/orx-pinned-vec/latest/orx_pinned_vec/#motivation--examples) section. In brief, a pinned vector does not allow implicit changes in memory locations of its elements; such as moving the entire vector to another memory location due to additional capacity requirement.
 
+> This crate is **no-std** by default.
+
 ## Features
 
 A fixed vec is simply a wrapper around the standard vector with the following two key differences:

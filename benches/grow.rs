@@ -1,6 +1,6 @@
 use criterion::{
-    black_box, criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, BenchmarkId,
-    Criterion,
+    BenchmarkGroup, BenchmarkId, Criterion, black_box, criterion_group, criterion_main,
+    measurement::WallTime,
 };
 use orx_fixed_vec::prelude::*;
 
