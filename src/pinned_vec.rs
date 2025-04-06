@@ -491,14 +491,24 @@ mod tests {
 
     #[test]
     fn pinned_vec_exact_capacity() {
-        for cap in [0, 124, 5421] {
+        #[cfg(not(miri))]
+        let capacities = [0, 124, 5421];
+        #[cfg(miri)]
+        let capacities = [0, 44];
+
+        for cap in capacities {
             test_pinned_vec(FixedVec::new(cap), cap);
         }
     }
 
     #[test]
     fn pinned_vec_loose_capacity() {
-        for cap in [0, 124, 5421] {
+        #[cfg(not(miri))]
+        let capacities = [0, 124, 5421];
+        #[cfg(miri)]
+        let capacities = [0, 44];
+
+        for cap in capacities {
             test_pinned_vec(FixedVec::new(cap * 2), cap);
         }
     }
