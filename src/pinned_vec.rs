@@ -475,6 +475,10 @@ impl<T> PinnedVec<T> for FixedVec<T> {
     {
         self.data.sort_by_key(f)
     }
+
+    fn capacity_bound(&self) -> usize {
+        usize::MAX
+    }
 }
 
 #[cfg(test)]
