@@ -10,14 +10,12 @@
     clippy::missing_panics_doc,
     clippy::todo
 )]
-#![no_std]
-
-#[cfg(any(test, feature = "parallel"))]
-extern crate std;
+#![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 
 mod common_traits;
+mod concurrent_iter;
 mod concurrent_pinned_vec;
 mod fixed_vec;
 mod helpers;
@@ -33,9 +31,3 @@ pub use orx_iterable::{Collection, CollectionMut, Iterable};
 pub use orx_pinned_vec::{
     ConcurrentPinnedVec, IntoConcurrentPinnedVec, PinnedVec, PinnedVecGrowthError,
 };
-
-// feature: parallel
-
-/// Concurrent iterator implementations.
-#[cfg(feature = "parallel")]
-mod concurrent_iter;

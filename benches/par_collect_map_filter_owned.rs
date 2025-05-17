@@ -1,8 +1,5 @@
-#![allow(dead_code, unreachable_code, unused_variables, unused_imports)]
-
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use orx_fixed_vec::*;
-#[cfg(feature = "parallel")]
 use orx_parallel::*;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -68,12 +65,10 @@ fn seq(inputs: Vec<usize>) -> Vec<Output> {
     inputs.into_iter().map(map).filter(filter).collect()
 }
 
-#[cfg(feature = "parallel")]
 fn par_over_vec(inputs: Vec<usize>) -> Vec<Output> {
     inputs.into_par().map(map).filter(filter).collect()
 }
 
-#[cfg(feature = "parallel")]
 fn par_over_fixed_vec(inputs: FixedVec<usize>) -> Vec<Output> {
     inputs.into_par().map(map).filter(filter).collect()
 }
@@ -84,7 +79,6 @@ fn run(c: &mut Criterion) {
     #[allow(unused_mut)]
     let mut group = c.benchmark_group("par_collect_map_filter_owned");
 
-    #[cfg(feature = "parallel")]
     for n in &treatments {
         let expected = seq(input(*n).collect());
 
