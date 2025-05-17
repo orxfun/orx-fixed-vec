@@ -10,11 +10,12 @@
     clippy::missing_panics_doc,
     clippy::todo
 )]
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 
 mod common_traits;
+mod concurrent_iter;
 mod concurrent_pinned_vec;
 mod fixed_vec;
 mod helpers;
