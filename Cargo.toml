@@ -17,7 +17,7 @@ orx-concurrent-iter = { path = "../orx-concurrent-iter", default-features = fals
 orx-parallel = { path = "../orx-parallel", default-features = false, optional = true }
 
 [[bench]]
-name = "par_collect_map_filter_ref"
+name = "par_collect_map_filter_owned"
 harness = false
 
 [dev-dependencies]
