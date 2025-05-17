@@ -12,6 +12,9 @@
 )]
 #![no_std]
 
+#[cfg(any(test, feature = "parallel"))]
+extern crate std;
+
 extern crate alloc;
 
 mod common_traits;
@@ -30,3 +33,9 @@ pub use orx_iterable::{Collection, CollectionMut, Iterable};
 pub use orx_pinned_vec::{
     ConcurrentPinnedVec, IntoConcurrentPinnedVec, PinnedVec, PinnedVecGrowthError,
 };
+
+// feature: parallel
+
+/// Concurrent iterator implementations.
+#[cfg(feature = "parallel")]
+mod concurrent_iter;
