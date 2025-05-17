@@ -8,11 +8,11 @@ An efficient fixed capacity vector with pinned element guarantees.
 
 A **FixedVec** implements [`PinnedVec`](https://crates.io/crates/orx-pinned-vec); you may read the detailed information about [pinned element guarantees](https://docs.rs/orx-pinned-vec/latest/orx_pinned_vec/#pinned-elements-guarantees) and why they are useful in the [motivation-and-examples](https://docs.rs/orx-pinned-vec/latest/orx_pinned_vec/#motivation--examples) section. In brief, a pinned vector does not allow implicit changes in memory locations of its elements; such as moving the entire vector to another memory location due to additional capacity requirement.
 
-> This crate is **no-std** by default.
+> This is **no-std** crate.
 
-## Features
+## Fixed Vector
 
-A fixed vec is simply a wrapper around the standard vector with the following two key differences:
+A `FixedVec` is simply a wrapper around the standard vector with the following two key differences:
 * It is always created with an initial fixed capacity which cannot implicitly change.
 * If we add more elements than the fixed capacity, the vector panics.
 
@@ -25,6 +25,18 @@ Using a fixed capacity vector has limited use cases as this information is usual
 
 In order to illustrate, consider an operation where we compute **n** outputs from **n** inputs; i.e., we map each element to a new element. Further, we want to collect or write the results in a new vector. In this case, we could safely use a `FixedVec` created with a capacity of **n** elements. This is exactly the parallel iterator [`Par`](https://crates.io/crates/orx-parallel) does under the hood when the length of the output is known with certainty. In other situations, `SplitVec` is used as the pinned vector.
 
+## Parallelization
+
+`FixedVec` implements [`ConcurrentCollection`](https://docs.rs/orx-concurrent-iter/latest/orx_concurrent_iter/trait.ConcurrentCollection.html).
+
+Therefore, when [orx_parallel](https://crates.io/crates/orx-parallel) crate is included, `FixedVec` also automatically implements [`ParallelizableCollection`](https://docs.rs/orx-parallel/latest/orx_parallel/trait.ParallelizableCollection.html).
+
+This means:
+
+* `fixed_vec.par()` returns a parallel iterator over references to its elements, and
+* `fixed_vec.into_par()` consumes the vector and returns a parallel iterator of the owned elements.
+
+You may find demonstrations in [`demo_parallelization`](https://github.com/orxfun/orx-fixed-vec/blob/main/examples/demo_parallelization.rs) and [`bench_parallelization`](https://github.com/orxfun/orx-fixed-vec/blob/main/examples/bench_parallelization.rs) examples.
 
 ## Examples
 
