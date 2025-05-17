@@ -31,7 +31,7 @@ In order to illustrate, consider an operation where we compute **n** outputs fro
 
 Therefore, when [orx_parallel](https://crates.io/crates/orx-parallel) crate is included, `FixedVec` also automatically implements [`ParallelizableCollection`](https://docs.rs/orx-parallel/latest/orx_parallel/trait.ParallelizableCollection.html).
 
-This means:
+This means that computations over the fixed vector can be efficiently parallelized:
 
 * `fixed_vec.par()` returns a parallel iterator over references to its elements, and
 * `fixed_vec.into_par()` consumes the vector and returns a parallel iterator of the owned elements.
