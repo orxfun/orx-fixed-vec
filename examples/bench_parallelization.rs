@@ -11,7 +11,7 @@ use utils::timed_collect_all;
 #[derive(Parser, Debug)]
 struct Args {
     /// Number of items in the input iterator.
-    #[arg(long, default_value_t = 100_000)]
+    #[arg(long, default_value_t = 1_000_000)]
     len: usize,
     /// Number of repetitions to measure time; total time will be reported.
     #[arg(long, default_value_t = 100)]
@@ -38,7 +38,7 @@ fn main() {
         fixed_vec
             .into_iter()
             .filter(|x| x % 3 != 0)
-            .map(|x| x + fibonacci(x % 20))
+            .map(|x| x + fibonacci(x % 40))
             .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
             .collect::<Vec<_>>()
     };
@@ -52,7 +52,7 @@ fn main() {
                 fixed_vec
                     .into_iter()
                     .filter(|x| x % 3 != 0)
-                    .map(|x| x + fibonacci(x % 20))
+                    .map(|x| x + fibonacci(x % 40))
                     .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
                     .collect::<Vec<_>>()
             }),
@@ -63,7 +63,7 @@ fn main() {
                 let vec: Vec<_> = (0..args.len as usize).collect();
                 vec.into_par_iter()
                     .filter(|x| *x % 3 != 0)
-                    .map(|x| x + fibonacci(x % 20))
+                    .map(|x| x + fibonacci(x % 40))
                     .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
                     .collect::<Vec<_>>()
             }),
@@ -75,7 +75,7 @@ fn main() {
 
                 vec.into_par()
                     .filter(|x| *x % 3 != 0)
-                    .map(|x| x + fibonacci(x % 20))
+                    .map(|x| x + fibonacci(x % 40))
                     .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
                     .collect::<Vec<_>>()
             }),
@@ -88,7 +88,7 @@ fn main() {
                 fixed_vec
                     .into_par() // replace iter (into_iter) with par (into_par) to parallelize !
                     .filter(|x| *x % 3 != 0)
-                    .map(|x| x + fibonacci(x % 20))
+                    .map(|x| x + fibonacci(x % 40))
                     .filter(|x| x % 2 == 0)
                     .map(|x| x.to_string())
                     .collect::<Vec<_>>()
