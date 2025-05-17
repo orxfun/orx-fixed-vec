@@ -1,3 +1,5 @@
+// cargo run --release --example bench_parallelization
+
 mod utils;
 
 use clap::Parser;
@@ -9,11 +11,22 @@ use utils::timed_collect_all;
 #[derive(Parser, Debug)]
 struct Args {
     /// Number of items in the input iterator.
-    #[arg(long, default_value_t = 100000)]
+    #[arg(long, default_value_t = 100_000)]
     len: usize,
     /// Number of repetitions to measure time; total time will be reported.
     #[arg(long, default_value_t = 100)]
     num_repetitions: usize,
+}
+
+fn fibonacci(n: usize) -> usize {
+    let mut a = 0;
+    let mut b = 1;
+    for _ in 0..n {
+        let c = a + b;
+        a = b;
+        b = c;
+    }
+    a
 }
 
 fn main() {
@@ -23,13 +36,10 @@ fn main() {
         let fixed_vec: FixedVec<_> = (0..args.len as usize).collect();
 
         fixed_vec
-            .iter()
-            .map(|x| x.to_string())
-            .filter_map(|x| (!x.starts_with('1')).then_some(x))
-            .flat_map(|x| [format!("{}!", &x), x])
-            .filter(|x| !x.starts_with('2'))
-            .filter_map(|x| x.parse::<u64>().ok())
-            .map(|x| x.to_string())
+            .into_iter()
+            .filter(|x| x % 3 != 0)
+            .map(|x| x + fibonacci(x % 20))
+            .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
             .collect::<Vec<_>>()
     };
 
@@ -37,15 +47,13 @@ fn main() {
         (
             "Sequential over Vec",
             Box::new(move || {
-                let vec: Vec<_> = (0..args.len as usize).collect();
+                let fixed_vec: FixedVec<_> = (0..args.len as usize).collect();
 
-                vec.iter()
-                    .map(|x| x.to_string())
-                    .filter_map(|x| (!x.starts_with('1')).then_some(x))
-                    .flat_map(|x| [format!("{}!", &x), x])
-                    .filter(|x| !x.starts_with('2'))
-                    .filter_map(|x| x.parse::<u64>().ok())
-                    .map(|x| x.to_string())
+                fixed_vec
+                    .into_iter()
+                    .filter(|x| x % 3 != 0)
+                    .map(|x| x + fibonacci(x % 20))
+                    .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
                     .collect::<Vec<_>>()
             }),
         ),
@@ -53,13 +61,10 @@ fn main() {
             "Parallelized over Vec using rayon",
             Box::new(move || {
                 let vec: Vec<_> = (0..args.len as usize).collect();
-                vec.par_iter()
-                    .map(|x| x.to_string())
-                    .filter_map(|x| (!x.starts_with('1')).then_some(x))
-                    .flat_map(|x| [format!("{}!", &x), x])
-                    .filter(|x| !x.starts_with('2'))
-                    .filter_map(|x| x.parse::<u64>().ok())
-                    .map(|x| x.to_string())
+                vec.into_par_iter()
+                    .filter(|x| *x % 3 != 0)
+                    .map(|x| x + fibonacci(x % 20))
+                    .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
                     .collect::<Vec<_>>()
             }),
         ),
@@ -68,13 +73,10 @@ fn main() {
             Box::new(move || {
                 let vec: Vec<_> = (0..args.len as usize).collect();
 
-                vec.par()
-                    .map(|x| x.to_string())
-                    .filter_map(|x| (!x.starts_with('1')).then_some(x))
-                    .flat_map(|x| [format!("{}!", &x), x])
-                    .filter(|x| !x.starts_with('2'))
-                    .filter_map(|x| x.parse::<u64>().ok())
-                    .map(|x| x.to_string())
+                vec.into_par()
+                    .filter(|x| *x % 3 != 0)
+                    .map(|x| x + fibonacci(x % 20))
+                    .filter_map(|x| (x % 2 == 0).then(|| x.to_string()))
                     .collect::<Vec<_>>()
             }),
         ),
@@ -84,12 +86,10 @@ fn main() {
                 let fixed_vec: FixedVec<_> = (0..args.len as usize).collect();
 
                 fixed_vec
-                    .par() // replace iter (into_iter) with par (into_par) to parallelize !
-                    .map(|x| x.to_string())
-                    .filter_map(|x| (!x.starts_with('1')).then_some(x))
-                    .flat_map(|x| [format!("{}!", &x), x])
-                    .filter(|x| !x.starts_with('2'))
-                    .filter_map(|x| x.parse::<u64>().ok())
+                    .into_par() // replace iter (into_iter) with par (into_par) to parallelize !
+                    .filter(|x| *x % 3 != 0)
+                    .map(|x| x + fibonacci(x % 20))
+                    .filter(|x| x % 2 == 0)
                     .map(|x| x.to_string())
                     .collect::<Vec<_>>()
             }),

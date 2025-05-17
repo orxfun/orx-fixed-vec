@@ -1,3 +1,5 @@
+// cargo run --release --example demo_parallelization
+
 use orx_fixed_vec::FixedVec;
 use orx_parallel::*;
 
