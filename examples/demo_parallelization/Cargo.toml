@@ -1,0 +1,9 @@
+[package]
+name = "demo_parallelization"
+version = "0.1.0"
+edition = "2024"
+publish = ["artifactory"]
+
+[dependencies]
+orx-fixed-vec = { path = "../../../orx-fixed-vec" }
+orx-parallel = { git = "https://github.com/orxfun/orx-parallel", branch = "relaxing-send-trait-bound" }

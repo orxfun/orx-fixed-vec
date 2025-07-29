@@ -1,6 +1,6 @@
 use crate::FixedVec;
 use orx_concurrent_iter::{
-    ConcurrentCollection, IntoConcurrentIter,
+    IntoConcurrentIter,
     implementations::{ConIterSlice, ConIterVec},
 };
 
@@ -19,13 +19,13 @@ where
 
 impl<'a, T> IntoConcurrentIter for &'a FixedVec<T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     type Item = &'a T;
 
     type IntoIter = ConIterSlice<'a, T>;
 
     fn into_con_iter(self) -> Self::IntoIter {
-        self.data.con_iter()
+        self.data.into_con_iter()
     }
 }
