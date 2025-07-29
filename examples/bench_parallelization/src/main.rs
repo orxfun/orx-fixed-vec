@@ -1,6 +1,6 @@
-// cargo run --release --example bench_parallelization
-// cargo run --release --example bench_parallelization -- --help
-// cargo run --release --example bench_parallelization -- --len 50000 --num-repetitions 20
+// cargo run --release
+// cargo run --release -- --help
+// cargo run --release -- --len 50000 --num-repetitions 20
 
 mod utils;
 
