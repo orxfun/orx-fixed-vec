@@ -245,7 +245,10 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         self.data.clear()
     }
 
-    unsafe fn ptr_iter_unchecked(&self, range: Range<usize>) -> impl Iterator<Item = *mut T> {
+    unsafe fn ptr_iter_unchecked(
+        &self,
+        range: Range<usize>,
+    ) -> impl ExactSizeIterator<Item = *mut T> {
         let ptr = self.ptr as *mut T;
         range.map(move |i| unsafe { ptr.add(i) })
     }
