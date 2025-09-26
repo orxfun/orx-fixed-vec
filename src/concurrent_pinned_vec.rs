@@ -52,7 +52,10 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         T: 'a,
         Self: 'a;
 
-    type PtrIter = FixedVecPtrIter<T>;
+    type PtrIter<'a>
+        = FixedVecPtrIter<T>
+    where
+        Self: 'a;
 
     unsafe fn into_inner(mut self, len: usize) -> Self::P {
         unsafe { self.data.set_len(len) };
@@ -248,7 +251,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         self.data.clear()
     }
 
-    unsafe fn ptr_iter_unchecked(&self, range: Range<usize>) -> Self::PtrIter {
+    unsafe fn ptr_iter_unchecked(&self, range: Range<usize>) -> Self::PtrIter<'_> {
         let ptr = self.ptr as *mut T;
         let ptr = unsafe { ptr.add(range.start) };
         FixedVecPtrIter::new(ptr, range.len())
