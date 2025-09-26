@@ -1,10 +1,11 @@
 use crate::{
     FixedVec,
+    common_traits::ptr_iter::FixedVecPtrIter,
     helpers::range::{range_end, range_start},
 };
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::fmt::Debug;
+use core::{cmp::Ordering, ops::Range};
 use orx_pinned_vec::{ConcurrentPinnedVec, PinnedVecGrowthError};
 
 /// Concurrent wrapper ([`orx_pinned_vec::ConcurrentPinnedVec`]) for the `FixedVec`.
@@ -49,6 +50,11 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         = Option<&'a mut [T]>
     where
         T: 'a,
+        Self: 'a;
+
+    type PtrIter<'a>
+        = FixedVecPtrIter<T>
+    where
         Self: 'a;
 
     unsafe fn into_inner(mut self, len: usize) -> Self::P {
@@ -243,5 +249,11 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     unsafe fn clear(&mut self, prior_len: usize) {
         unsafe { self.set_pinned_vec_len(prior_len) };
         self.data.clear()
+    }
+
+    unsafe fn ptr_iter_unchecked(&self, range: Range<usize>) -> Self::PtrIter<'_> {
+        let ptr = self.ptr as *mut T;
+        let ptr = unsafe { ptr.add(range.start) };
+        FixedVecPtrIter::new(ptr, range.len())
     }
 }
