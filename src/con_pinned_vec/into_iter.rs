@@ -2,7 +2,8 @@ use alloc::vec::Vec;
 use core::ops::Range;
 
 pub struct ConcurrentFixedVecIntoIter<T> {
-    data: Vec<T>,
+    // will be dropped with the iter
+    _data: Vec<T>,
     begin: *mut T,
     current: usize,
     end_exclusive: usize,
@@ -16,7 +17,7 @@ impl<T> ConcurrentFixedVecIntoIter<T> {
         let (current, end_exclusive) = (range.start, range.end);
         let begin = data.as_mut_ptr();
         Self {
-            data,
+            _data: data,
             begin,
             current,
             end_exclusive,
