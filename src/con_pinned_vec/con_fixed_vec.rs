@@ -260,7 +260,7 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         FixedVecPtrIter::new(ptr, range.len())
     }
 
-    fn into_iter(self, range: Range<usize>) -> Self::IntoIter {
+    unsafe fn into_iter(self, range: Range<usize>) -> Self::IntoIter {
         ConcurrentFixedVecIntoIter::new(self.data, range)
     }
 }
