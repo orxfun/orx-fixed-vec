@@ -57,6 +57,8 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
     where
         Self: 'a;
 
+    type IntoIter = core::iter::Empty<T>;
+
     unsafe fn into_inner(mut self, len: usize) -> Self::P {
         unsafe { self.data.set_len(len) };
         self.data.into()
@@ -255,5 +257,9 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         let ptr = self.ptr as *mut T;
         let ptr = unsafe { ptr.add(range.start) };
         FixedVecPtrIter::new(ptr, range.len())
+    }
+
+    fn into_iter(self) -> Self::IntoIter {
+        todo!()
     }
 }
