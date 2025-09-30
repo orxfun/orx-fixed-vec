@@ -15,8 +15,8 @@
 extern crate alloc;
 
 mod common_traits;
+mod con_pinned_vec;
 mod concurrent_iter;
-mod concurrent_pinned_vec;
 mod fixed_vec;
 mod helpers;
 mod into_concurrent_pinned_vec;
@@ -25,7 +25,7 @@ mod pinned_vec;
 /// Common relevant traits, structs, enums.
 pub mod prelude;
 
-pub use concurrent_pinned_vec::ConcurrentFixedVec;
+pub use con_pinned_vec::ConcurrentFixedVec;
 pub use fixed_vec::FixedVec;
 pub use orx_iterable::{Collection, CollectionMut, Iterable};
 pub use orx_pinned_vec::{

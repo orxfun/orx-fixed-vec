@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 mod as_ref;
 mod clone;
 mod debug;

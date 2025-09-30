@@ -14,6 +14,16 @@ impl<T> FixedVecPtrIter<T> {
     }
 }
 
+impl<T> Default for FixedVecPtrIter<T> {
+    fn default() -> Self {
+        Self {
+            ptr: core::ptr::null_mut(),
+            len: 0,
+            current: 0,
+        }
+    }
+}
+
 impl<T> Iterator for FixedVecPtrIter<T> {
     type Item = *mut T;
 

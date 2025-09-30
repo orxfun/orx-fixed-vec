@@ -1,6 +1,7 @@
 use crate::{
     FixedVec,
     common_traits::ptr_iter::FixedVecPtrIter,
+    con_pinned_vec::into_iter::ConcurrentFixedVecIntoIter,
     helpers::range::{range_end, range_start},
 };
 use alloc::vec::Vec;
@@ -56,6 +57,8 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         = FixedVecPtrIter<T>
     where
         Self: 'a;
+
+    type IntoIter = ConcurrentFixedVecIntoIter<T>;
 
     unsafe fn into_inner(mut self, len: usize) -> Self::P {
         unsafe { self.data.set_len(len) };
@@ -255,5 +258,9 @@ impl<T> ConcurrentPinnedVec<T> for ConcurrentFixedVec<T> {
         let ptr = self.ptr as *mut T;
         let ptr = unsafe { ptr.add(range.start) };
         FixedVecPtrIter::new(ptr, range.len())
+    }
+
+    unsafe fn into_iter(self, range: Range<usize>) -> Self::IntoIter {
+        ConcurrentFixedVecIntoIter::new(self.data, range)
     }
 }
