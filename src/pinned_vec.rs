@@ -214,7 +214,7 @@ impl<T> PinnedVec<T> for FixedVec<T> {
         self.data.reserve(count);
         let dst = unsafe { self.data.as_mut_ptr().add(self.data.len()) };
         unsafe { dst.copy_from_nonoverlapping(src, count) };
-        unsafe { self.data.set_len(self.len() + count) };
+        unsafe { self.data.set_len(self.data.len() + count) };
     }
 
     #[inline(always)]
