@@ -108,6 +108,11 @@ impl<T> FixedVec<T> {
         self.data.as_slice()
     }
 
+    /// Returns a mutable reference to the underlying vec.
+    pub fn as_mut_vec(&mut self) -> &mut Vec<T> {
+        &mut self.data
+    }
+
     // helpers
     #[inline(always)]
     pub(crate) fn panic_if_not_enough_room_for(&self, num_new_items: usize) {
