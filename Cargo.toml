@@ -20,6 +20,6 @@ name = "random_access"
 harness = false
 
 [dev-dependencies]
-criterion = "0.7.0"
-rand = "0.9.2"
-rand_chacha = "0.9"
+criterion = "0.8.2"
+rand = "0.10.1"
+rand_chacha = "0.10.0"
